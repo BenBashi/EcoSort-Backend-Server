@@ -1,0 +1,10 @@
+Flask
+flask-cors
+pymongo
+python-dotenv
+opencv-python
+Pillow
+torch
+torchvision
+gdown
+pyserial

@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 
 # Load Configuration
 load_dotenv(dotenv_path="./.env.local")
+
+# Load env variables
 DB_URI = os.environ.get("DB_URI", "")
 DB_NAME = os.environ.get("DB_NAME", "")
 SAMPLE_COLLECTION = os.environ.get("SAMPLE_COLLECTION", "")
@@ -18,6 +20,7 @@ samples_collection = db[SAMPLE_COLLECTION]
 ALLOWED_SYSTEM_ANALYSIS = {"Paper", "Plastic", "Other", "Uncertain"}
 ALLOWED_IMAGE_CLASS = {"Paper", "Plastic", "Other", None}
 ALLOWED_OUTCOME = {"Success", "Failure", None}
+
 
 def validate_sample(sample_data, require_all_fields=True):
     """
