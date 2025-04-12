@@ -2,6 +2,8 @@
 from flask import Blueprint, request, jsonify
 from utils.camera import capture_image_and_load
 from utils.machine_learning import run_test_environment
+from data.mongo_db import create_sample
+import os
 # For treadmill, camera, classification, etc., import from your utils or data
 # from utils.arduino import start_motors_slow, stop_motors
 # from data.mongo_db import create_sample, ...
@@ -32,34 +34,66 @@ def system_stop_route():
     return jsonify({"message": "System stopped"}), 200
 
 
-@home_bp.route("/evaluate", methods=["GET"])
+@home_bp.route("/evaluate", methods=["POST"])
 def evaluate_route():
     """
     1) Capture a photo from the camera -> PIL image
-    2) Run the model inference with 'run_test_environment'
-    3) Return the predicted label & confidence
+    2) Run the model inference (run_test_environment)
+    3) Insert a new sample into MongoDB with the inference results
+    4) Return the predicted label & confidence
     """
-
     # Directory & filename for the camera capture
     save_dir = r"C:\Users\user\OneDrive\Gallery\Pictures"
     filename = "camera_image.jpg"
-    threshold = float(0.7)
+    threshold = 0.7  # example threshold
 
+    # 1) Capture image
     try:
-        # 1) Capture + load as a PIL image
         saved_path, pil_img = capture_image_and_load(save_dir, filename)
     except Exception as e:
         return jsonify({"error": f"Camera capture failed: {e}"}), 500
 
+    # 2) Run model inference
     try:
-        # 2) Run model inference
         label, confidence_str = run_test_environment(threshold, pil_img)
-        # 3) Return JSON
-        return jsonify({
-            "message": "Inference complete",
-            "file_path": saved_path,
-            "label": label,
-            "confidence": confidence_str
-        }), 200
     except Exception as e:
         return jsonify({"error": f"Model inference failed: {e}"}), 500
+
+    # 3) Create sample in MongoDB
+    #    Derive image_name from the file path, e.g. the filename part
+    image_name = os.path.basename(saved_path)
+
+    # system_analysis is the model's predicted label
+    system_analysis = label
+
+    # If system_analysis == "Uncertain", set outcome to "Failure" and image_class to None
+    # Otherwise, outcome = None, image_class = None
+    if system_analysis == "Uncertain":
+        outcome = "Failure"
+    else:
+        outcome = None
+
+    new_sample = {
+        "image_name": image_name,               # e.g. "camera_image.jpg"
+        "file_path": saved_path,                # full path
+        "system_analysis": system_analysis,      # from model inference
+        "image_class": None,                    # user has not updated it yet
+        "outcome": outcome,                     # "Failure" if Uncertain, else None
+        "confidence_percentage": confidence_str  # must be a string
+    }
+
+    try:
+        inserted_id = create_sample(new_sample)
+    except ValueError as ve:
+        return jsonify({"error": f"Validation error: {ve}"}), 400
+    except Exception as ex:
+        return jsonify({"error": f"Database error: {ex}"}), 500
+
+    # 4) Return the results
+    return jsonify({
+        "message": "Inference complete, sample created",
+        "file_path": saved_path,
+        "label": label,
+        "confidence": confidence_str,
+        "inserted_id": inserted_id
+    }), 200

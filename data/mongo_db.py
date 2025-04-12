@@ -22,9 +22,10 @@ ALLOWED_SYSTEM_ANALYSIS = {"Paper", "Plastic", "Other", "Uncertain"}
 ALLOWED_IMAGE_CLASS = {"Paper", "Plastic", "Other", None}
 ALLOWED_OUTCOME = {"Success", "Failure", None}
 
-# Validates Sample data according to the specified constraints.
 def validate_sample(sample_data, require_all_fields=True):
     """
+    Validates Sample data according to the specified constraints.
+    
     :param sample_data: dict containing these fields:
         image_name, file_path, system_analysis, image_class, outcome, confidence_percentage
     :param require_all_fields: bool indicating whether all fields must be present (for creation).
@@ -40,13 +41,13 @@ def validate_sample(sample_data, require_all_fields=True):
         "confidence_percentage"
     ]
     
-    # If we require all fields (create scenario), ensure none are missing
+    # 1) If we require all fields (create scenario), ensure none are missing
     if require_all_fields:
         for field in required_fields:
             if field not in sample_data:
                 raise ValueError(f"Missing required field '{field}'.")
 
-    # Validate each field that is present
+    # 2) Validate only the fields that are present
     if "image_name" in sample_data:
         if not isinstance(sample_data["image_name"], str):
             raise ValueError("image_name must be a string.")
@@ -84,9 +85,7 @@ def create_sample(sample_data):
     :param sample_data: dict containing all Sample fields
     :return: inserted_id (string)
     """
-    # Validate input
     validate_sample(sample_data, require_all_fields=True)
-
     result = samples_collection.insert_one(sample_data)
     return str(result.inserted_id)
 
@@ -116,21 +115,9 @@ def get_sample_by_id(sample_id):
     return doc
 
 
-def get_sample_by_name(name):
-    """
-    Returns a single Sample by ImageName.
-    :param name: string
-    :return: Sample dict or None if not found
-    """
-    doc = samples_collection.find_one({"ImageName": name})
-    if doc:
-        doc["_id"] = str(doc["_id"])
-    return doc
-
-
 def update_sample(sample_id, update_data):
     """
-    Updates an existing Sample document by _id.
+    Updates an existing Sample document by _id (partial update).
     :param sample_id: string (ObjectId as string)
     :param update_data: dict of fields to update
     :return: number of modified documents (int)
