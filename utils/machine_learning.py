@@ -16,7 +16,7 @@ MODEL_URL = os.environ.get("MODEL_URL", "")
 # -----------------------------------------------------------------------------
 # 1. Download the model file ONCE (if it doesn't exist yet)
 # -----------------------------------------------------------------------------
-model_path_default = "resnet50_recycling.pth"
+model_path_default = "./resnet50_recycling.pth"
 if not os.path.exists(model_path_default):
     gdown.download(MODEL_URL, model_path_default, quiet=False)
 

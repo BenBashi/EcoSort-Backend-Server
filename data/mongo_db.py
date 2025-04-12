@@ -15,6 +15,7 @@ SAMPLE_COLLECTION = os.environ.get("SAMPLE_COLLECTION", "")
 client = MongoClient(DB_URI)
 db = client[DB_NAME]
 samples_collection = db[SAMPLE_COLLECTION]
+print("MongoDB connection alive, DB Collections: ", db.list_collection_names())
 
 # Allowed values for fields
 ALLOWED_SYSTEM_ANALYSIS = {"Paper", "Plastic", "Other", "Uncertain"}
