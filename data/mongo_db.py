@@ -22,17 +22,23 @@ ALLOWED_SYSTEM_ANALYSIS = {"Paper", "Plastic", "Other", "Uncertain"}
 ALLOWED_IMAGE_CLASS = {"Paper", "Plastic", "Other", None}
 ALLOWED_OUTCOME = {"Success", "Failure", None}
 
-
+# Validates Sample data according to the specified constraints.
 def validate_sample(sample_data, require_all_fields=True):
     """
-    Validates Sample data according to the specified constraints.
-    
-    :param sample_data: dict containing fields: ImageName, FilePath, SystemAnalysis, ImageClass, Outcome
+    :param sample_data: dict containing these fields:
+        image_name, file_path, system_analysis, image_class, outcome, confidence_percentage
     :param require_all_fields: bool indicating whether all fields must be present (for creation).
                                If False, only validate the fields that are present (for partial updates).
     :raises ValueError: if validation fails.
     """
-    required_fields = ["ImageName", "FilePath", "SystemAnalysis", "ImageClass", "Outcome"]
+    required_fields = [
+        "image_name",
+        "file_path",
+        "system_analysis",
+        "image_class",
+        "outcome",
+        "confidence_percentage"
+    ]
     
     # If we require all fields (create scenario), ensure none are missing
     if require_all_fields:
@@ -41,25 +47,35 @@ def validate_sample(sample_data, require_all_fields=True):
                 raise ValueError(f"Missing required field '{field}'.")
 
     # Validate each field that is present
-    if "ImageName" in sample_data:
-        if not isinstance(sample_data["ImageName"], str):
-            raise ValueError("ImageName must be a string.")
+    if "image_name" in sample_data:
+        if not isinstance(sample_data["image_name"], str):
+            raise ValueError("image_name must be a string.")
 
-    if "FilePath" in sample_data:
-        if not isinstance(sample_data["FilePath"], str):
-            raise ValueError("FilePath must be a string.")
+    if "file_path" in sample_data:
+        if not isinstance(sample_data["file_path"], str):
+            raise ValueError("file_path must be a string.")
 
-    if "SystemAnalysis" in sample_data:
-        if sample_data["SystemAnalysis"] not in ALLOWED_SYSTEM_ANALYSIS:
-            raise ValueError(f"SystemAnalysis must be one of {ALLOWED_SYSTEM_ANALYSIS}.")
+    if "system_analysis" in sample_data:
+        if sample_data["system_analysis"] not in ALLOWED_SYSTEM_ANALYSIS:
+            raise ValueError(
+                f"system_analysis must be one of {ALLOWED_SYSTEM_ANALYSIS}."
+            )
 
-    if "ImageClass" in sample_data:
-        if sample_data["ImageClass"] not in ALLOWED_IMAGE_CLASS:
-            raise ValueError(f"ImageClass must be one of {ALLOWED_IMAGE_CLASS}.")
+    if "image_class" in sample_data:
+        if sample_data["image_class"] not in ALLOWED_IMAGE_CLASS:
+            raise ValueError(
+                f"image_class must be one of {ALLOWED_IMAGE_CLASS}."
+            )
 
-    if "Outcome" in sample_data:
-        if sample_data["Outcome"] not in ALLOWED_OUTCOME:
-            raise ValueError(f"Outcome must be one of {ALLOWED_OUTCOME}.")
+    if "outcome" in sample_data:
+        if sample_data["outcome"] not in ALLOWED_OUTCOME:
+            raise ValueError(
+                f"outcome must be one of {ALLOWED_OUTCOME}."
+            )
+
+    if "confidence_percentage" in sample_data:
+        if not isinstance(sample_data["confidence_percentage"], str):
+            raise ValueError("confidence_percentage must be a string.")
 
 
 def create_sample(sample_data):
