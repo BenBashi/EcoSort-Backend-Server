@@ -1,7 +1,10 @@
-# api/dashboard_api.py
 from flask import Blueprint, request, jsonify
-from data.mongo_db import samples_collection, update_sample, get_samples, delete_sample
-from bson.objectid import ObjectId
+from data.mongo_db import (
+    update_sample,
+    get_samples,
+    delete_sample,
+    get_sample_by_id
+)
 
 dashboard_bp = Blueprint("dashboard_bp", __name__)
 
@@ -23,20 +26,15 @@ def update_result_route():
     system_analysis = data.get("system_analysis")
     image_class = data.get("image_class")
 
-    # Validate input presence
     if not sample_id or not system_analysis or not image_class:
         return jsonify({"error": "Missing one of: sample_id, system_analysis, image_class"}), 400
 
-    # Determine outcome
     outcome = "Success" if (image_class == system_analysis) else "Failure"
-
-    # Prepare partial update
     update_data = {
         "image_class": image_class,
         "outcome": outcome
     }
 
-    # Attempt to update the DB
     try:
         modified_count = update_sample(sample_id, update_data)
         return jsonify({"modified_count": modified_count}), 200
@@ -45,59 +43,78 @@ def update_result_route():
     except Exception as ex:
         return jsonify({"error": f"Database error: {ex}"}), 500
 
-
 @dashboard_bp.route("/get_results", methods=["GET"])
 def get_results_route():
     """
     Retrieves all samples from the database.
     """
-    # You can directly call your mongo_db helper
-    results = get_samples()
-    return jsonify({"samples": results}), 200
+    try:
+        results = get_samples()
+        return jsonify({"samples": results}), 200
+    except Exception as ex:
+        return jsonify({"error": f"Database error: {ex}"}), 500
 
+@dashboard_bp.route("/get_result", methods=["POST"])
+def get_result_route():
+    """
+    Returns a single Sample document by _id.
+    Expects JSON with:
+      { "sample_id": <the Mongo _id string> }
+    If found, returns the doc. If not found, returns None.
+    """
+    data = request.json
+    sample_id = data.get("sample_id")
+    if not sample_id:
+        return jsonify({"error": "Missing sample_id"}), 400
+
+    try:
+        doc = get_sample_by_id(sample_id)
+        # doc will be None if not found
+        return jsonify({"sample": doc}), 200
+    except Exception as ex:
+        return jsonify({"error": f"Database error: {ex}"}), 500
 
 @dashboard_bp.route("/calculate_accuracy", methods=["GET"])
 def calculate_accuracy_route():
     """
-    Compares 'SystemAnalysis' vs. 'ImageClass' to compute % correct.
+    Compares 'system_analysis' vs. 'image_class' to compute % correct.
     """
-    docs = get_samples()
+    try:
+        docs = get_samples()
+    except Exception as ex:
+        return jsonify({"error": f"Database error: {ex}"}), 500
+
     if not docs:
         return jsonify({"accuracy": 0}), 200
 
     total = len(docs)
     correct = 0
     for doc in docs:
-        if doc.get("SystemAnalysis") == doc.get("ImageClass"):
+        # Adjust keys if your DB fields differ in naming
+        if doc.get("system_analysis") == doc.get("image_class"):
             correct += 1
 
     accuracy = (correct / total) * 100
     return jsonify({"accuracy": accuracy}), 200
 
-
 @dashboard_bp.route("/default_model", methods=["POST"])
 def default_model_route():
     """
     Resets the active classifier to the default pre-trained model.
-    (Call your internal function if it exists)
+    (Placeholder)
     """
-    # e.g., set_default_model()
-    # For now, just a placeholder response
     return jsonify({"message": "Default model reactivated"}), 200
-
 
 @dashboard_bp.route("/retrain", methods=["POST"])
 def retrain_route():
     """
     Retrains the model with updated/mislabeled data.
-    (Call your internal function if it exists)
+    (Placeholder)
     """
-    # e.g., retrain_model()
     return jsonify({"message": "Retraining started..."}), 200
 
-
-@dashboard_bp.route("/delete_sample", methods=["POST"])
-def delete_sample_route():
+@dashboard_bp.route("/delete_result", methods=["POST"])
+def delete_result_route():
     """
     Deletes a Sample document by _id.
     Expects JSON with {"sample_id": <the Mongo _id string>}.
