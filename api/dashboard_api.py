@@ -3,7 +3,8 @@ from data.mongo_db import (
     update_sample,
     get_samples,
     delete_sample,
-    get_sample_by_id
+    get_sample_by_id,
+    delete_all_samples
 )
 
 dashboard_bp = Blueprint("dashboard_bp", __name__)
@@ -128,6 +129,19 @@ def delete_result_route():
 
     try:
         deleted_count = delete_sample(sample_id)
+        return jsonify({"deleted_count": deleted_count}), 200
+    except Exception as ex:
+        return jsonify({"error": f"Database error: {ex}"}), 500
+
+@dashboard_bp.route("/delete_results", methods=["POST"])
+def delete_all_results_route():
+    """
+    Deletes **all** Sample documents in the collection.
+    No request body required.
+    Returns {"deleted_count": <how many docs were removed>}.
+    """
+    try:
+        deleted_count = delete_all_samples()
         return jsonify({"deleted_count": deleted_count}), 200
     except Exception as ex:
         return jsonify({"error": f"Database error: {ex}"}), 500
