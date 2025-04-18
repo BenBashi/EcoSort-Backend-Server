@@ -4,6 +4,7 @@ from utils.camera import capture_image_and_load
 from utils.machine_learning import run_test_environment
 from data.mongo_db import create_sample
 import os
+
 # For treadmill, camera, classification, etc., import from your utils or data
 # from utils.arduino import start_motors_slow, stop_motors
 # from data.mongo_db import create_sample, ...
@@ -43,12 +44,13 @@ def evaluate_route():
     4) Return the predicted label & confidence
     """
     # Directory & filename for the camera capture
-    save_dir = r"C:\Users\user\OneDrive\Gallery\Pictures"
+    save_dir = os.path.join(os.getcwd(), "images")
     filename = "camera_image.jpg"
     threshold = 0.7  # example threshold
 
     # 1) Capture image
     try:
+        os.makedirs(save_dir, exist_ok=True)
         saved_path, pil_img = capture_image_and_load(save_dir, filename)
     except Exception as e:
         return jsonify({"error": f"Camera capture failed: {e}"}), 500
