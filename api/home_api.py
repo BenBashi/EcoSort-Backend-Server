@@ -45,6 +45,7 @@ def evaluate_route():
     """
     # Directory & filename for the camera capture
     save_dir = os.path.join(os.getcwd(), "images")
+
     filename = "camera_image.jpg"
     threshold = 0.7  # example threshold
 
@@ -94,6 +95,7 @@ def evaluate_route():
     # 4) Return the results
     return jsonify({
         "message": "Inference complete, sample created",
+        "image_name": image_name,
         "file_path": saved_path,
         "label": label,
         "confidence": confidence_str,
