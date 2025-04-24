@@ -155,7 +155,7 @@ def delete_sample(sample_id):
 
 def delete_all_samples():
     """
-    Deletes **all** Sample documents in the collection.
+    Deletes all Sample documents from the database.
     :return: number of deleted documents (int)
     :raises Exception: if the DB deletion fails.
     """
@@ -163,4 +163,4 @@ def delete_all_samples():
         result = samples_collection.delete_many({})
         return result.deleted_count
     except errors.PyMongoError as e:
-        raise Exception(f"DB delete_many failed: {e}")
+        raise Exception(f"DB delete (delete_many) failed: {e}")
