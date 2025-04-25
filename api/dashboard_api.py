@@ -19,24 +19,16 @@ def update_result_route(sample_id):
         "system_analysis": <the model's predicted label, e.g. "Paper" or "Plastic">,
         "image_class": <the user's manual classification>
       }
-
-    Sets outcome="Success" if image_class == system_analysis, else "Failure".
     """
     data = request.json
     system_analysis = data.get("systemAnalysis")
     image_class = data.get("trueClass")
 
     if not sample_id or not system_analysis or not image_class:
-        return jsonify({"error": "Missing one of: sample_id, system_analysis, image_class"}), 400
-
-    outcome = "Success" if (image_class == system_analysis) else "Failure"
-    update_data = {
-        "image_class": image_class,
-        "outcome": outcome
-    }
+        return jsonify({"error": "Missing one of: sample_id, system_analysis, image_class"}), 400    
 
     try:
-        modified_count = update_sample(sample_id, update_data)
+        modified_count = update_sample(sample_id, image_class)
         return jsonify({"modified_count": modified_count}), 200
     except ValueError as ve:
         return jsonify({"error": f"Validation error: {ve}"}), 400
