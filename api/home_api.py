@@ -71,12 +71,14 @@ def evaluate_route():
     # system_analysis is the model's predicted label
     system_analysis = label
 
-    # If system_analysis == "Uncertain", set outcome to "Failure" and image_class to None
-    # Otherwise, outcome = None, image_class = None
-    if system_analysis == "Uncertain":
-        outcome = "Failure"
-    else:
-        outcome = None
+    # # If system_analysis == "Uncertain", set outcome to "Failure" and image_class to None
+    # # Otherwise, outcome = None, image_class = None
+    # if system_analysis == "Uncertain":
+    #     outcome = "Failure"
+    # else:
+    #     outcome = None
+
+    outcome = None
 
     new_sample = {
         "image_name": image_name,               # e.g. "camera_image.jpg"
