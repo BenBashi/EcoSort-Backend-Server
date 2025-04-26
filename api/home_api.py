@@ -12,29 +12,21 @@ from utils.arduino import (
 )
 from data.mongo_db import create_sample
 import os
+import atexit
 
 home_bp = Blueprint("home_bp", __name__)
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Initialise / close the Arduino connection exactly once
 # ──────────────────────────────────────────────────────────────────────────────
-@home_bp.before_app_first_request
-def _open_serial():
+@home_bp.record_once
+def _init_serial(state):
+    """Runs exactly once, when the blueprint is registered."""
     try:
-        initialize_connection()         # utils.arduino takes defaults from its constants
-        current_app.logger.info("Arduino serial connection initialised.")
+        initialize_connection()
+        state.app.logger.info("Arduino serial connection initialised.")
     except Exception as e:
-        # Log the error – routes will still run but commands will error out
-        current_app.logger.error(f"Arduino init failed: {e}")
-
-@home_bp.teardown_appcontext
-def _close_serial(exc):
-    # Always attempt clean shutdown
-    try:
-        close_connection()
-        current_app.logger.info("Arduino serial connection closed.")
-    except Exception:
-        pass
+        state.app.logger.error(f"Arduino init failed: {e}")
 # ──────────────────────────────────────────────────────────────────────────────
 
 # ─────────────────────────────
@@ -145,3 +137,5 @@ def evaluate_route():
         "confidence":  confidence_str,
         "inserted_id": inserted_id
     }), 200
+
+atexit.register(close_connection)

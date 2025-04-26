@@ -21,4 +21,5 @@ def create_app():
 if __name__ == "__main__":
     app = create_app()
     # Use threaded=True so Arduino serial write/read is not blocked by other requests
-    app.run(debug=True, port=5050, threaded=True)
+    app.run(debug=True, port=5050, threaded=True, use_reloader=False)
+    
