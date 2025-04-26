@@ -11,8 +11,7 @@ from utils.arduino import (
     move_servo_100_to_0     # “servo right‑to‑left”
 )
 from data.mongo_db import create_sample
-import os
-import atexit
+import os, atexit, time 
 
 home_bp = Blueprint("home_bp", __name__)
 
@@ -107,12 +106,17 @@ def evaluate_route():
         label, confidence_str = run_test_environment(threshold, pil_img)
     except Exception as e:
         return jsonify({"error": f"Model inference failed: {e}"}), 500
+    
+    if label == "Paper":
+        move_servo_100_to_0()
+    elif label == "Plastic":
+        move_servo_0_to_100()
 
     # 3. Build & insert sample
     image_name       = os.path.basename(saved_path)
     system_analysis  = label
     outcome          = "Failure" if system_analysis == "Uncertain" else None
-
+    
     sample_doc = {
         "image_name":            image_name,
         "file_path":             saved_path,
@@ -128,6 +132,13 @@ def evaluate_route():
         return jsonify({"error": f"Validation error: {ve}"}), 400
     except Exception as ex:
         return jsonify({"error": f"Database error: {ex}"}), 500
+    
+    start_motors_slow()
+    time.sleep(1)
+    if label == "Paper":
+        move_servo_0_to_100()
+    elif label == "Plastic":
+        move_servo_100_to_0()
 
     # 4. Respond to client
     return jsonify({
