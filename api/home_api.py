@@ -14,6 +14,7 @@ from data.mongo_db import create_sample
 import uuid
 import os, atexit, time 
 
+home_bp = Blueprint("home_bp", __name__)
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Initialise / close the Arduino connection exactly once
@@ -26,44 +27,6 @@ def _init_serial(state):
         state.app.logger.info("Arduino serial connection initialised.")
     except Exception as e:
         state.app.logger.error(f"Arduino init failed: {e}")
-# ──────────────────────────────────────────────────────────────────────────────
-
-# ─────────────────────────────
-# 1.  Stepper‑motor routes
-# ─────────────────────────────
-@home_bp.route("/start_stepper", methods=["POST"])
-def start_stepper_route():
-    """
-    Starts the conveyor / stepper motors (slow forward).
-    """
-    try:
-        start_motors_slow()
-        return jsonify({"message": "Stepper started"}), 200
-    except Exception as ex:
-        return jsonify({"error": f"Stepper start failed: {ex}"}), 500
-
-home_bp = Blueprint("home_bp", __name__)
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Initialise / close the Arduino connection exactly once
-# ──────────────────────────────────────────────────────────────────────────────
-@home_bp.before_app_first_request
-def _open_serial():
-    try:
-        initialize_connection()         # utils.arduino takes defaults from its constants
-        current_app.logger.info("Arduino serial connection initialised.")
-    except Exception as e:
-        # Log the error – routes will still run but commands will error out
-        current_app.logger.error(f"Arduino init failed: {e}")
-
-@home_bp.teardown_appcontext
-def _close_serial(exc):
-    # Always attempt clean shutdown
-    try:
-        close_connection()
-        current_app.logger.info("Arduino serial connection closed.")
-    except Exception:
-        pass
 # ──────────────────────────────────────────────────────────────────────────────
 
 # ─────────────────────────────
