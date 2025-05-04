@@ -1,5 +1,5 @@
 # api/home_api.py
-from flask import Blueprint, jsonify, current_app
+from flask import Blueprint, jsonify, current_app, request
 from utils.camera import capture_image_and_load
 from utils.machine_learning import run_test_environment
 from utils.arduino import (
@@ -32,8 +32,8 @@ def _init_serial(state):
 # ─────────────────────────────
 # 1.  Stepper‑motor routes
 # ─────────────────────────────
-@home_bp.route("/start_stepper", methods=["POST"])
-def start_stepper_route():
+@home_bp.route("/system_start", methods=["POST"])
+def system_start_route():
     """
     Starts the conveyor / stepper motors (slow forward).
     """
@@ -42,10 +42,10 @@ def start_stepper_route():
         return jsonify({"message": "Stepper started"}), 200
     except Exception as ex:
         return jsonify({"error": f"Stepper start failed: {ex}"}), 500
+        
 
-
-@home_bp.route("/stop_stepper", methods=["POST"])
-def stop_stepper_route():
+@home_bp.route("/system_stop", methods=["POST"])
+def system_stop_route():
     """
     Stops the conveyor / stepper motors immediately.
     """
@@ -119,10 +119,6 @@ def evaluate_route():
     # 3. Build & insert sample
     image_name       = os.path.basename(saved_path)
     system_analysis  = label
-    outcome          = "Failure" if system_analysis == "Uncertain" else None
-
-    # system_analysis is the model's predicted label
-    system_analysis = label
     outcome = None
 
     sample_doc = {
