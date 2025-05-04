@@ -3,13 +3,36 @@ from flask import Blueprint, request, jsonify
 from utils.camera import capture_image_and_load
 from utils.machine_learning import run_test_environment
 from data.mongo_db import create_sample
-import os
 import uuid
+import os, atexit, time 
 
 
-# For treadmill, camera, classification, etc., import from your utils or data
-# from utils.arduino import start_motors_slow, stop_motors
-# from data.mongo_db import create_sample, ...
+# ──────────────────────────────────────────────────────────────────────────────
+# Initialise / close the Arduino connection exactly once
+# ──────────────────────────────────────────────────────────────────────────────
+@home_bp.record_once
+def _init_serial(state):
+    """Runs exactly once, when the blueprint is registered."""
+    try:
+        initialize_connection()
+        state.app.logger.info("Arduino serial connection initialised.")
+    except Exception as e:
+        state.app.logger.error(f"Arduino init failed: {e}")
+# ──────────────────────────────────────────────────────────────────────────────
+
+# ─────────────────────────────
+# 1.  Stepper‑motor routes
+# ─────────────────────────────
+@home_bp.route("/start_stepper", methods=["POST"])
+def start_stepper_route():
+    """
+    Starts the conveyor / stepper motors (slow forward).
+    """
+    try:
+        start_motors_slow()
+        return jsonify({"message": "Stepper started"}), 200
+    except Exception as ex:
+        return jsonify({"error": f"Stepper start failed: {ex}"}), 500
 
 home_bp = Blueprint("home_bp", __name__)
 
@@ -63,6 +86,11 @@ def evaluate_route():
         label, confidence_str = run_test_environment(threshold, pil_img)
     except Exception as e:
         return jsonify({"error": f"Model inference failed: {e}"}), 500
+    
+    if label == "Paper":
+        move_servo_100_to_0()
+    elif label == "Plastic":
+        move_servo_0_to_100()
 
     # 3) Create sample in MongoDB
     #    Derive image_name from the file path, e.g. the filename part
@@ -95,6 +123,13 @@ def evaluate_route():
         return jsonify({"error": f"Validation error: {ve}"}), 400
     except Exception as ex:
         return jsonify({"error": f"Database error: {ex}"}), 500
+    
+    start_motors_slow()
+    time.sleep(1)
+    if label == "Paper":
+        move_servo_0_to_100()
+    elif label == "Plastic":
+        move_servo_100_to_0()
 
     # 4) Return the results
     return jsonify({
@@ -105,3 +140,5 @@ def evaluate_route():
         "confidence": confidence_str,
         "inserted_id": inserted_id
     }), 200
+
+atexit.register(close_connection)

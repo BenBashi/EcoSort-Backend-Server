@@ -66,11 +66,11 @@ def move_servo_0_to_100():
     Moves the servo from (or to) 0°, waits 1 second, then moves to 100°, and stops.
     """
     # Tell Arduino: set servo to 0°
-    send_command("SERVO 0")  
+    send_command("RIGHT")  
     time.sleep(1)           # Wait 1 second
-
-    # Then tell Arduino: set servo to 100°
-    send_command("SERVO 100")  
+    send_command("RIGHT")
+    time.sleep(1)           # Wait 1 second
+    send_command("RIGHT")    
     # No extra waiting needed unless you want to hold the servo at 100° for some time
     # "Stop" just means we stop sending more servo commands.
 
@@ -82,10 +82,11 @@ def move_servo_100_to_0():
     """
     Moves the servo from (or to) 100°, waits 1 second, then moves to 0°, and stops.
     """
-    send_command("SERVO 100")
-    time.sleep(1)
-
-    send_command("SERVO 0")
+    send_command("LEFT")  
+    time.sleep(1)           # Wait 1 second
+    send_command("LEFT")
+    time.sleep(1)           # Wait 1 second
+    send_command("LEFT") 
     # Again, no extra waiting needed to "stop."
 
 
