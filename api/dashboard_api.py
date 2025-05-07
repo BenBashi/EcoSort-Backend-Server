@@ -9,8 +9,8 @@ from data.mongo_db import (
 
 dashboard_bp = Blueprint("dashboard_bp", __name__)
 
-@dashboard_bp.route("/update_result", methods=["POST"])
-def update_result_route():
+@dashboard_bp.route("/results/<sample_id>", methods=["PUT"])
+def update_result_route(sample_id):
     """
     Allows users to update the image_class field for a sample.
     Expects JSON with:
@@ -23,9 +23,8 @@ def update_result_route():
     Sets outcome="Success" if image_class == system_analysis, else "Failure".
     """
     data = request.json
-    sample_id = data.get("sample_id")
-    system_analysis = data.get("system_analysis")
-    image_class = data.get("image_class")
+    system_analysis = data.get("systemAnalysis")
+    image_class = data.get("trueClass")
 
     if not sample_id or not system_analysis or not image_class:
         return jsonify({"error": "Missing one of: sample_id, system_analysis, image_class"}), 400
@@ -55,16 +54,14 @@ def get_results_route():
     except Exception as ex:
         return jsonify({"error": f"Database error: {ex}"}), 500
 
-@dashboard_bp.route("/get_result", methods=["POST"])
-def get_result_route():
+@dashboard_bp.route("/results/<sample_id>", methods=["GET"])
+def get_result_route(sample_id):
     """
     Returns a single Sample document by _id.
     Expects JSON with:
       { "sample_id": <the Mongo _id string> }
     If found, returns the doc. If not found, returns None.
     """
-    data = request.json
-    sample_id = data.get("sample_id")
     if not sample_id:
         return jsonify({"error": "Missing sample_id"}), 400
 
@@ -133,12 +130,11 @@ def delete_result_route():
     except Exception as ex:
         return jsonify({"error": f"Database error: {ex}"}), 500
 
-@dashboard_bp.route("/delete_results", methods=["POST"])
+# A route to delete all samples from the database
+@dashboard_bp.route("/samples", methods=["DELETE"])
 def delete_all_results_route():
     """
-    Deletes **all** Sample documents in the collection.
-    No request body required.
-    Returns {"deleted_count": <how many docs were removed>}.
+    Deletes all samples from the database.
     """
     try:
         deleted_count = delete_all_samples()

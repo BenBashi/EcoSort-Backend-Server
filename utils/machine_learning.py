@@ -75,14 +75,12 @@ def get_transform():
 def predict_recycling_class(pil_img, model, device, transform, threshold=0.7):
     """
     Predict the recycling class for a given PIL image.
-      - threshold: if max confidence < threshold => 'uncertain'
 
     Returns:
-      (predicted_idx, confidence, class_confidences, is_uncertain)
+      (predicted_idx, confidence, class_confidences)
         - predicted_idx (int) : index of predicted class
         - confidence (float)  : highest confidence
         - class_confidences (np.array): all class probabilities
-        - is_uncertain (bool) : True if confidence < threshold
     """
     # Preprocess: PIL -> tensor -> device
     img_tensor = transform(pil_img).unsqueeze(0).to(device)
@@ -97,8 +95,8 @@ def predict_recycling_class(pil_img, model, device, transform, threshold=0.7):
     confidence = max_prob.item()
     class_confidences = probabilities.cpu().numpy()
 
-    is_uncertain = (confidence < threshold)
-    return predicted_idx, confidence, class_confidences, is_uncertain
+    # is_uncertain = (confidence < threshold)
+    return predicted_idx, confidence, class_confidences
 
 
 # -----------------------------------------------------------------------------
@@ -115,15 +113,11 @@ def run_test_environment(threshold, pil_img, model_path=model_path_default):
     model, device = load_model_weights(model_path)
     transform = get_transform()
 
-    predicted_idx, confidence, _, is_uncertain = predict_recycling_class(
+    predicted_idx, confidence, _ = predict_recycling_class(
         pil_img, model, device, transform, threshold
     )
 
-    # Determine label
-    if is_uncertain:
-        label = "Uncertain"
-    else:
-        label = class_names[predicted_idx]
-
+    label = class_names[predicted_idx]
     confidence_str = f"{confidence * 100:.2f}"
+    
     return label, confidence_str
