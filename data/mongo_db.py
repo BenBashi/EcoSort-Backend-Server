@@ -22,9 +22,8 @@ except errors.PyMongoError as e:
     raise  # Optionally handle differently in production
 
 # Allowed values for fields
-ALLOWED_SYSTEM_ANALYSIS = {"Paper", "Plastic", "Other", "Uncertain"}
+ALLOWED_SYSTEM_ANALYSIS = {"Paper", "Plastic", "Other"}
 ALLOWED_IMAGE_CLASS = {"Paper", "Plastic", "Other", None}
-ALLOWED_OUTCOME = {"Success", "Failure", None}
 
 def validate_sample(sample_data, require_all_fields=True):
     """
@@ -41,7 +40,6 @@ def validate_sample(sample_data, require_all_fields=True):
         "file_path",
         "system_analysis",
         "image_class",
-        "outcome",
         "confidence_percentage"
     ]
     
@@ -65,10 +63,6 @@ def validate_sample(sample_data, require_all_fields=True):
     if "image_class" in sample_data:
         if sample_data["image_class"] not in ALLOWED_IMAGE_CLASS:
             raise ValueError(f"image_class must be one of {ALLOWED_IMAGE_CLASS}.")
-
-    if "outcome" in sample_data:
-        if sample_data["outcome"] not in ALLOWED_OUTCOME:
-            raise ValueError(f"outcome must be one of {ALLOWED_OUTCOME}.")
 
     if "confidence_percentage" in sample_data:
         if not isinstance(sample_data["confidence_percentage"], str):

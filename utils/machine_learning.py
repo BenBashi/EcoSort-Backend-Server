@@ -117,13 +117,7 @@ def run_test_environment(threshold, pil_img, model_path=model_path_default):
         pil_img, model, device, transform, threshold
     )
 
-    # Determine label
-    # if is_uncertain:
-    #     label = "Uncertain"
-    # else:
-    #     label = class_names[predicted_idx]
-
     label = class_names[predicted_idx]
-
     confidence_str = f"{confidence * 100:.2f}"
+    
     return label, confidence_str

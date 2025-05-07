@@ -96,7 +96,7 @@ def evaluate_route():
     save_dir = os.path.join(os.getcwd(), "images")
     image_uuid = str(uuid.uuid4())[:8]
     filename = f"{image_uuid}.jpg"
-    threshold = 0.7  # example threshold
+    threshold = 0.7  
 
     # 1. Capture image
     try:
@@ -119,15 +119,13 @@ def evaluate_route():
     # 3. Build & insert sample
     image_name       = os.path.basename(saved_path)
     system_analysis  = label
-    outcome = None
 
     sample_doc = {
         "image_name":            image_name,
         "file_path":             saved_path,
         "system_analysis":       system_analysis,
         "image_class":           None,
-        "outcome":               outcome,
-        "confidence_percentage": confidence_str# must be a string
+        "confidence_percentage": confidence_str
     }
 
     try:
