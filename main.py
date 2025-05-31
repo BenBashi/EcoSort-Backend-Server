@@ -12,6 +12,8 @@ def create_app():
     app.register_blueprint(dashboard_bp, url_prefix="/dashboard")
     app.register_blueprint(home_bp,      url_prefix="/home")
 
+    app.config['PREDICTION_THRESHOLD'] = 0.7
+
     @app.route("/")
     def root():
         return "Ecosort Flask Backend Server"

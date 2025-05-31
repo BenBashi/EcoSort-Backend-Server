@@ -91,6 +91,12 @@ SERVO_ACTIONS = {
 
 @home_bp.route("/evaluate", methods=["POST"])
 def evaluate_route():
+    """
+    • Capture an image
+    • Run model inference
+    • Save a new sample to MongoDB
+    • Return prediction + DB id
+    """
     threshold = float(current_app.config.get("PREDICTION_THRESHOLD", 0.7))
 
     try:
