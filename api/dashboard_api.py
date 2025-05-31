@@ -89,7 +89,7 @@ def calculate_accuracy_route():
     correct = 0
     for doc in docs:
         # Adjust keys if your DB fields differ in naming
-        if doc.get("system_analysis") == doc.get("image_class"):
+        if doc.get("image_class") in [ doc.get("system_analysis"), None ]:
             correct += 1
 
     accuracy = (correct / total) * 100
