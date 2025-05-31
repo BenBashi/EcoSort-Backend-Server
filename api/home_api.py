@@ -84,68 +84,51 @@ def servo_right_to_left_route():
 # ─────────────────────────────
 # 3.  Image‑capture / prediction route
 # ─────────────────────────────
+SERVO_ACTIONS = {
+    "Paper": move_servo_0_to_100,
+    "Plastic": move_servo_100_to_0
+}
+
 @home_bp.route("/evaluate", methods=["POST"])
 def evaluate_route():
-    """
-    • Capture an image
-    • Run model inference
-    • Save a new sample to MongoDB
-    • Return prediction + DB id
-    """
-    # Directory & filename for the camera capture
-    save_dir = os.path.join(os.getcwd(), "images")
-    image_uuid = str(uuid.uuid4())[:8]
-    filename = f"{image_uuid}.jpg"
-    threshold = 0.7  
+    threshold = float(current_app.config.get("PREDICTION_THRESHOLD", 0.7))
 
-    # 1. Capture image
     try:
-        os.makedirs(save_dir, exist_ok=True)
-        saved_path, pil_img = capture_image_and_load(save_dir, filename)
+        os.makedirs("images", exist_ok=True)
+        filename = f"{uuid.uuid4().hex[:8]}.jpg"
+        saved_path, pil_img = capture_image_and_load("images", filename)
+        current_app.logger.info(f"Image saved: {saved_path}")
     except Exception as e:
-        return jsonify({"error": f"Camera capture failed: {e}"}), 500
+        return jsonify({"error": f"Camera error: {e}"}), 500
 
-    # 2. Model inference
     try:
         label, confidence_str = run_test_environment(threshold, pil_img)
+        current_app.logger.info(f"Prediction: {label} ({confidence_str})")
     except Exception as e:
-        return jsonify({"error": f"Model inference failed: {e}"}), 500
-    
-    if label == "Paper":
-        move_servo_100_to_0()
-    elif label == "Plastic":
-        move_servo_0_to_100()
+        return jsonify({"error": f"Model error: {e}"}), 500
 
-    # 3. Build & insert sample
-    image_name       = os.path.basename(saved_path)
-    system_analysis  = label
-
-    sample_doc = {
-        "image_name":            image_name,
-        "file_path":             saved_path,
-        "system_analysis":       system_analysis,
-        "image_class":           None,
-        "confidence_percentage": confidence_str
-    }
+    if label in SERVO_ACTIONS:
+        try:
+            SERVO_ACTIONS[label]()  # Actuate servo
+            start_motors_slow()
+            time.sleep(1)
+        except Exception as e:
+            return jsonify({"error": f"Hardware action failed: {e}"}), 500
 
     try:
-        inserted_id = create_sample(sample_doc)
-    except ValueError as ve:
-        return jsonify({"error": f"Validation error: {ve}"}), 400
-    except Exception as ex:
-        return jsonify({"error": f"Database error: {ex}"}), 500
-    
-    start_motors_slow()
-    time.sleep(1)
-    if label == "Paper":
-        move_servo_0_to_100()
-    elif label == "Plastic":
-        move_servo_100_to_0()
+        inserted_id = create_sample({
+            "image_name": os.path.basename(saved_path),
+            "file_path": saved_path,
+            "system_analysis": label,
+            "image_class": None,
+            "confidence_percentage": confidence_str
+        })
+    except Exception as e:
+        return jsonify({"error": f"DB error: {e}"}), 500
 
-    # 4. Respond to client
     return jsonify({
-        "message": "Inference complete, sample created",
-        "image_name": image_name,
+        "message": "Success",
+        "image_name": filename,
         "file_path": saved_path,
         "label": label,
         "confidence": confidence_str,
