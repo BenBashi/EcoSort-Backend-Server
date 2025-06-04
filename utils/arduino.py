@@ -89,6 +89,30 @@ def move_servo_100_to_0():
     send_command("LEFT") 
     # Again, no extra waiting needed to "stop."
 
+def push_right():
+    """
+    Safely push an object to the right by moving servo left then right.
+    This avoids servo over-rotation issues.
+    Paper waste.
+    """
+    print("[Servo] Repositioning left before pushing right...")
+    send_command("LEFT")
+    time.sleep(1)
+    send_command("RIGHT")
+    time.sleep(1)
+
+def push_left():
+    """
+    Safely push an object to the left by moving servo right then left.
+    This avoids servo over-rotation issues.
+    Plastic waste.
+    """
+    print("[Servo] Repositioning right before pushing left...")
+    send_command("RIGHT")
+    time.sleep(1)
+    send_command("LEFT")
+    time.sleep(1)
+
 
 # =======================================
 # 3) Start Motors (Forward Slow)
