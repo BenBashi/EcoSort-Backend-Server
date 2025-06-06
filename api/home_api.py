@@ -7,8 +7,8 @@ from utils.arduino import (
     close_connection,
     start_motors_slow,      # “stepper start”
     stop_motors,            # “stepper stop”
-    move_servo_0_to_100,    # “servo left‑to‑right”
-    move_servo_100_to_0     # “servo right‑to‑left”
+    push_right,
+    push_left
 )
 from data.mongo_db import create_sample
 import uuid
@@ -58,35 +58,35 @@ def system_stop_route():
 # ─────────────────────────────
 # 2.  Servo routes
 # ─────────────────────────────
-@home_bp.route("/servo_ltr", methods=["POST"])
-def servo_left_to_right_route():
-    """
-    Rotate the sorting arm: **Left → Right** (0° → 100°).
-    """
-    try:
-        move_servo_0_to_100()
-        return jsonify({"message": "Servo moved left‑to‑right"}), 200
-    except Exception as ex:
-        return jsonify({"error": f"Servo LTR failed: {ex}"}), 500
+# @home_bp.route("/servo_ltr", methods=["POST"])
+# def servo_left_to_right_route():
+#     """
+#     Rotate the sorting arm: **Left → Right** (0° → 100°).
+#     """
+#     try:
+#         move_servo_0_to_100()
+#         return jsonify({"message": "Servo moved left‑to‑right"}), 200
+#     except Exception as ex:
+#         return jsonify({"error": f"Servo LTR failed: {ex}"}), 500
 
 
-@home_bp.route("/servo_rtl", methods=["POST"])
-def servo_right_to_left_route():
-    """
-    Rotate the sorting arm: **Right → Left** (100° → 0°).
-    """
-    try:
-        move_servo_100_to_0()
-        return jsonify({"message": "Servo moved right‑to‑left"}), 200
-    except Exception as ex:
-        return jsonify({"error": f"Servo RTL failed: {ex}"}), 500
+# @home_bp.route("/servo_rtl", methods=["POST"])
+# def servo_right_to_left_route():
+#     """
+#     Rotate the sorting arm: **Right → Left** (100° → 0°).
+#     """
+#     try:
+#         move_servo_100_to_0()
+#         return jsonify({"message": "Servo moved right‑to‑left"}), 200
+#     except Exception as ex:
+#         return jsonify({"error": f"Servo RTL failed: {ex}"}), 500
 
 # ─────────────────────────────
 # 3.  Image‑capture / prediction route
 # ─────────────────────────────
 SERVO_ACTIONS = {
-    "Paper": move_servo_0_to_100,
-    "Plastic": move_servo_100_to_0
+    "Paper": push_right,
+    "Plastic": push_left
 }
 
 @home_bp.route("/evaluate", methods=["POST"])
