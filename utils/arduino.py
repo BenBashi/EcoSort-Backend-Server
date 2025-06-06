@@ -71,7 +71,6 @@ def push_right():
     send_command("LEFT")
     time.sleep(1)
     send_command("RIGHT")
-    time.sleep(1)
 
 def push_left():
     """
@@ -83,7 +82,6 @@ def push_left():
     send_command("RIGHT")
     time.sleep(1)
     send_command("LEFT")
-    time.sleep(1)
 
 
 # =======================================
