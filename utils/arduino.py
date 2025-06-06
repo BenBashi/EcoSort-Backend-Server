@@ -4,7 +4,7 @@ import time
 # =======================================
 # Configuration
 # =======================================
-SERIAL_PORT = "COM5"     # e.g., 'COM5' on Windows or '/dev/ttyACM0' on Linux/macOS
+SERIAL_PORT = "/dev/tty.usbserial-0001"     # e.g., 'COM5' on Windows or '/dev/ttyACM0' on Linux/macOS
 BAUD_RATE   = 115200     # Must match your Arduino sketch
 
 # We'll keep a global reference to the Serial object
@@ -59,35 +59,31 @@ def send_command(command):
 
 
 # =======================================
-# 1) Move Servo 0° → 100°
-# =======================================
-def move_servo_0_to_100():
-    """
-    Moves the servo from (or to) 0°, waits 1 second, then moves to 100°, and stops.
-    """
-    # Tell Arduino: set servo to 0°
-    send_command("RIGHT")  
-    time.sleep(1)           # Wait 1 second
-    send_command("RIGHT")
-    time.sleep(1)           # Wait 1 second
-    send_command("RIGHT")    
-    # No extra waiting needed unless you want to hold the servo at 100° for some time
-    # "Stop" just means we stop sending more servo commands.
 
 
-# =======================================
-# 2) Move Servo 100° → 0°
-# =======================================
-def move_servo_100_to_0():
+def push_right():
     """
-    Moves the servo from (or to) 100°, waits 1 second, then moves to 0°, and stops.
+    Safely push an object to the right by moving servo left then right.
+    This avoids servo over-rotation issues.
+    Paper waste.
     """
-    send_command("LEFT")  
-    time.sleep(1)           # Wait 1 second
+    print("[Servo] Repositioning left before pushing right...")
     send_command("LEFT")
-    time.sleep(1)           # Wait 1 second
-    send_command("LEFT") 
-    # Again, no extra waiting needed to "stop."
+    time.sleep(1)
+    send_command("RIGHT")
+    time.sleep(1)
+
+def push_left():
+    """
+    Safely push an object to the left by moving servo right then left.
+    This avoids servo over-rotation issues.
+    Plastic waste.
+    """
+    print("[Servo] Repositioning right before pushing left...")
+    send_command("RIGHT")
+    time.sleep(1)
+    send_command("LEFT")
+    time.sleep(1)
 
 
 # =======================================
