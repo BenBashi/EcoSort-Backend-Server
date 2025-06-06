@@ -70,19 +70,23 @@ def servo_push_route():
     Move the servo based on waste class sent in POST body:
     - Paper: push right
     - Plastic: push left
+    - Other: no action
     """
     data = request.get_json()
-    label = data.get("trueClass")
+    label = data.get("label")
 
     if not label:
-        return jsonify({"error": "Missing 'trueClass' in request body"}), 400
+        return jsonify({"error": "Missing 'label' in request body"}), 400
+
+    if label == "Other":
+        return jsonify({"message": "Label is 'Other'; no servo action taken."}), 200
 
     action = SERVO_ACTIONS.get(label)
     if not action:
         return jsonify({"error": f"Unknown label: {label}"}), 400
 
     try:
-        action()  # Call push_left or push_right
+        action()  # push_right() or push_left()
         return jsonify({"message": f"Servo pushed for {label}"}), 200
     except Exception as ex:
         return jsonify({"error": f"Servo push failed: {ex}"}), 500
