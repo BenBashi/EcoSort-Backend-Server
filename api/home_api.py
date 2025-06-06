@@ -55,39 +55,41 @@ def system_stop_route():
     except Exception as ex:
         return jsonify({"error": f"Stepper stop failed: {ex}"}), 500
 
-# ─────────────────────────────
-# 2.  Servo routes
-# ─────────────────────────────
-# @home_bp.route("/servo_ltr", methods=["POST"])
-# def servo_left_to_right_route():
-#     """
-#     Rotate the sorting arm: **Left → Right** (0° → 100°).
-#     """
-#     try:
-#         move_servo_0_to_100()
-#         return jsonify({"message": "Servo moved left‑to‑right"}), 200
-#     except Exception as ex:
-#         return jsonify({"error": f"Servo LTR failed: {ex}"}), 500
-
-
-# @home_bp.route("/servo_rtl", methods=["POST"])
-# def servo_right_to_left_route():
-#     """
-#     Rotate the sorting arm: **Right → Left** (100° → 0°).
-#     """
-#     try:
-#         move_servo_100_to_0()
-#         return jsonify({"message": "Servo moved right‑to‑left"}), 200
-#     except Exception as ex:
-#         return jsonify({"error": f"Servo RTL failed: {ex}"}), 500
-
-# ─────────────────────────────
-# 3.  Image‑capture / prediction route
-# ─────────────────────────────
 SERVO_ACTIONS = {
     "Paper": push_right,
     "Plastic": push_left
 }
+
+# ─────────────────────────────
+# 2.  Servo routes
+# ─────────────────────────────
+
+@home_bp.route("/servo_push", methods=["POST"])
+def servo_push_route():
+    """
+    Move the servo based on waste class sent in POST body:
+    - Paper: push right
+    - Plastic: push left
+    """
+    data = request.get_json()
+    label = data.get("trueClass")
+
+    if not label:
+        return jsonify({"error": "Missing 'trueClass' in request body"}), 400
+
+    action = SERVO_ACTIONS.get(label)
+    if not action:
+        return jsonify({"error": f"Unknown label: {label}"}), 400
+
+    try:
+        action()  # Call push_left or push_right
+        return jsonify({"message": f"Servo pushed for {label}"}), 200
+    except Exception as ex:
+        return jsonify({"error": f"Servo push failed: {ex}"}), 500
+
+# ─────────────────────────────
+# 3.  Image‑capture / prediction route
+# ─────────────────────────────
 
 @home_bp.route("/evaluate", methods=["POST"])
 def evaluate_route():
