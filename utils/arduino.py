@@ -4,7 +4,7 @@ import time
 # =======================================
 # Configuration
 # =======================================
-SERIAL_PORT = "COM5"     # e.g., 'COM5' on Windows or '/dev/ttyACM0' on Linux/macOS
+SERIAL_PORT = "/dev/tty.usbserial-0001"     # e.g., 'COM5' on Windows or '/dev/ttyACM0' on Linux/macOS
 BAUD_RATE   = 115200     # Must match your Arduino sketch
 
 # We'll keep a global reference to the Serial object
