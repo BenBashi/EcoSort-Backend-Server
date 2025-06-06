@@ -7,8 +7,6 @@ from utils.arduino import (
     close_connection,
     start_motors_slow,      # “stepper start”
     stop_motors,            # “stepper stop”
-    move_servo_0_to_100,    # “servo left‑to‑right”
-    move_servo_100_to_0,    # “servo right‑to‑left”
     push_right,
     push_left
 )
