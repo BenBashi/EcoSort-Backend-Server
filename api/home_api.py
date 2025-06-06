@@ -119,7 +119,7 @@ def evaluate_route():
     except Exception as e:
         return jsonify({"error": f"Model error: {e}"}), 500
 
-    if label in SERVO_ACTIONS:
+    if confidence_str > threshold and label in SERVO_ACTIONS:
         try:
             SERVO_ACTIONS[label]()  # Actuate servo
             start_motors_slow()
