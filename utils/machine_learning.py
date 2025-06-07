@@ -72,7 +72,7 @@ def get_transform():
                              std=[0.229, 0.224, 0.225])
     ])
 
-def predict_recycling_class(pil_img, model, device, transform, threshold=0.7):
+def predict_recycling_class(pil_img, model, device, transform):
     """
     Predict the recycling class for a given PIL image.
 
@@ -95,14 +95,13 @@ def predict_recycling_class(pil_img, model, device, transform, threshold=0.7):
     confidence = max_prob.item()
     class_confidences = probabilities.cpu().numpy()
 
-    # is_uncertain = (confidence < threshold)
     return predicted_idx, confidence, class_confidences
 
 
 # -----------------------------------------------------------------------------
 # 4. Single Image Classification Utility
 # -----------------------------------------------------------------------------
-def run_test_environment(threshold, pil_img, model_path=model_path_default):
+def run_test_environment(pil_img):
     """
     - Loads the model from 'model_path'
     - Classifies the given PIL image
@@ -110,11 +109,11 @@ def run_test_environment(threshold, pil_img, model_path=model_path_default):
     """
     class_names = ["Plastic", "Paper", "Other"]
 
-    model, device = load_model_weights(model_path)
+    model, device = load_model_weights(model_path_default)
     transform = get_transform()
 
     predicted_idx, confidence, _ = predict_recycling_class(
-        pil_img, model, device, transform, threshold
+        pil_img, model, device, transform
     )
 
     label = class_names[predicted_idx]

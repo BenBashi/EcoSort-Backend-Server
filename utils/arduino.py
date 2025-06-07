@@ -53,9 +53,6 @@ def send_command(command):
     line = (command + "\n").encode("utf-8")
     arduino_serial.write(line)
     arduino_serial.flush()
-    # Optionally read a response:
-    # response = arduino_serial.readline().decode('utf-8').strip()
-    # print(f"[Arduino] {response}")
 
 
 # =======================================
@@ -67,9 +64,8 @@ def push_right():
     This avoids servo over-rotation issues.
     Paper waste.
     """
-    print("[Servo] Repositioning left before pushing right...")
     send_command("LEFT")
-    time.sleep(1)
+    time.sleep(0.5)
     send_command("RIGHT")
 
 def push_left():
@@ -78,9 +74,8 @@ def push_left():
     This avoids servo over-rotation issues.
     Plastic waste.
     """
-    print("[Servo] Repositioning right before pushing left...")
     send_command("RIGHT")
-    time.sleep(1)
+    time.sleep(0.5)
     send_command("LEFT")
 
 
