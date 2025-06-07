@@ -69,7 +69,7 @@ def push_right():
     """
     print("[Servo] Repositioning left before pushing right...")
     send_command("LEFT")
-    time.sleep(1)
+    time.sleep(0.5)
     send_command("RIGHT")
 
 def push_left():
@@ -80,7 +80,7 @@ def push_left():
     """
     print("[Servo] Repositioning right before pushing left...")
     send_command("RIGHT")
-    time.sleep(1)
+    time.sleep(0.5)
     send_command("LEFT")
 
 

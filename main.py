@@ -10,9 +10,9 @@ def create_app():
     
     # Register blueprints
     app.register_blueprint(dashboard_bp, url_prefix="/dashboard")
-    app.register_blueprint(home_bp,      url_prefix="/home")
+    app.register_blueprint(home_bp, url_prefix="/home")
 
-    app.config['PREDICTION_THRESHOLD'] = 0.7
+    app.config['PREDICTION_THRESHOLD'] = 70
 
     @app.route("/")
     def root():

@@ -30,7 +30,8 @@ void loop() {
     if (cmd == "LEFT") {
       trackServo.write(0);
     } else if (cmd == "RIGHT") {
-      trackServo.write(180);
+      // trackServo.write(180);
+      trackServo.writeMicroseconds(2700);
     } else if (cmd == "MOTORS_FORWARD_SLOW") {
       digitalWrite(ML_Ctrl, LOW);
       analogWrite(ML_PWM, 200);

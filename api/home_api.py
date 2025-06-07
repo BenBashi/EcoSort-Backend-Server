@@ -15,7 +15,6 @@ import uuid
 import os, atexit, time 
 
 home_bp = Blueprint("home_bp", __name__)
-
 # ──────────────────────────────────────────────────────────────────────────────
 # Initialise / close the Arduino connection exactly once
 # ──────────────────────────────────────────────────────────────────────────────
@@ -73,7 +72,7 @@ def servo_push_route():
     - Other: no action
     """
     data = request.get_json()
-    label = data.get("label")
+    label = data.get("trueClass")
 
     if not label:
         return jsonify({"error": "Missing 'label' in request body"}), 400
@@ -103,7 +102,7 @@ def evaluate_route():
     • Save a new sample to MongoDB
     • Return prediction + DB id
     """
-    threshold = float(current_app.config.get("PREDICTION_THRESHOLD", 0.7))
+    threshold = float(current_app.config.get("PREDICTION_THRESHOLD", 70))
 
     try:
         os.makedirs("images", exist_ok=True)
@@ -114,12 +113,11 @@ def evaluate_route():
         return jsonify({"error": f"Camera error: {e}"}), 500
 
     try:
-        label, confidence_str = run_test_environment(threshold, pil_img)
+        label, confidence_str = run_test_environment(pil_img)
         current_app.logger.info(f"Prediction: {label} ({confidence_str})")
     except Exception as e:
         return jsonify({"error": f"Model error: {e}"}), 500
-
-    if confidence_str > threshold and label in SERVO_ACTIONS:
+    if float(confidence_str) > threshold and label in SERVO_ACTIONS:
         try:
             SERVO_ACTIONS[label]()  # Actuate servo
             start_motors_slow()
