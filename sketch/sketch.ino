@@ -34,9 +34,9 @@ void loop() {
       trackServo.writeMicroseconds(2700);
     } else if (cmd == "MOTORS_FORWARD_SLOW") {
       digitalWrite(ML_Ctrl, LOW);
-      analogWrite(ML_PWM, 200);
+      analogWrite(ML_PWM, 120);
       digitalWrite(MR_Ctrl, LOW);
-      analogWrite(MR_PWM, 200);
+      analogWrite(MR_PWM, 120);
     } else if (cmd == "MOTORS_STOP") {
       analogWrite(ML_PWM, 0);
       analogWrite(MR_PWM, 0);

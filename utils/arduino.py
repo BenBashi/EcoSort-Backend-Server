@@ -4,7 +4,7 @@ import time
 # =======================================
 # Configuration
 # =======================================
-SERIAL_PORT = "/dev/tty.usbserial-0001"     # e.g., 'COM5' on Windows or '/dev/ttyACM0' on Linux/macOS
+SERIAL_PORT = "/dev/cu.usbserial-0001"     # e.g., 'COM5' on Windows or '/dev/ttyACM0' on Linux/macOS
 BAUD_RATE   = 115200     # Must match your Arduino sketch
 
 # We'll keep a global reference to the Serial object
@@ -65,7 +65,7 @@ def push_right():
     Paper waste.
     """
     send_command("LEFT")
-    time.sleep(0.5)
+    time.sleep(0.7)
     send_command("RIGHT")
 
 def push_left():
@@ -75,7 +75,7 @@ def push_left():
     Plastic waste.
     """
     send_command("RIGHT")
-    time.sleep(0.5)
+    time.sleep(0.7)
     send_command("LEFT")
 
 
