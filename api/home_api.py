@@ -12,7 +12,7 @@ from utils.arduino import (
 )
 from data.mongo_db import create_sample
 import uuid
-import os, atexit, time 
+import os, atexit, time
 
 home_bp = Blueprint("home_bp", __name__)
 # ──────────────────────────────────────────────────────────────────────────────
@@ -85,6 +85,7 @@ def servo_push_route():
         return jsonify({"error": f"Unknown label: {label}"}), 400
 
     try:
+        time.sleep(1.7)  # wait until the product reaces the end of the belt
         action()  # push_right() or push_left()
         return jsonify({"message": f"Servo pushed for {label}"}), 200
     except Exception as ex:
@@ -119,6 +120,7 @@ def evaluate_route():
         return jsonify({"error": f"Model error: {e}"}), 500
     if float(confidence_str) > threshold and label in SERVO_ACTIONS:
         try:
+            time.sleep(1.7)  # wait until the product reaces the end of the belt
             SERVO_ACTIONS[label]()  # Actuate servo
             start_motors_slow()
         except Exception as e:
