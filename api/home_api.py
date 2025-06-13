@@ -149,16 +149,20 @@ def evaluate_route():
         except Exception as e:
             return jsonify({"error": f"Hardware action failed: {e}"}), 500
 
-    try:
-        inserted_id = create_sample({
-            "image_name": os.path.basename(saved_path),
-            "file_path": saved_path,
-            "system_analysis": label,
-            "image_class": None,
-            "confidence_percentage": confidence_str
-        })
-    except Exception as e:
-        return jsonify({"error": f"DB error: {e}"}), 500
+    # Skip saving to the DB if the label is "Track"
+    if label != 'Track':
+        try:
+            inserted_id = create_sample({
+                "image_name": os.path.basename(saved_path),
+                "file_path": saved_path,
+                "system_analysis": label,
+                "image_class": None,
+                "confidence_percentage": confidence_str
+            })
+        except Exception as e:
+            return jsonify({"error": f"DB error: {e}"}), 500
+    else:
+        inserted_id = None  # No DB insertion for 'Track' label
 
     return jsonify({
         "message": "Success",
