@@ -22,8 +22,8 @@ home_bp = Blueprint("home_bp", __name__)
 def _init_serial(state):
     """Runs exactly once, when the blueprint is registered."""
     try:
-        initialize_connection()
-        state.app.logger.info("Arduino serial connection initialised.")
+        # Mocking the Arduino initialization (skipping real connection)
+        print("Mocked Arduino serial connection initialised.")
     except Exception as e:
         state.app.logger.error(f"Arduino init failed: {e}")
 # ──────────────────────────────────────────────────────────────────────────────
@@ -31,13 +31,28 @@ def _init_serial(state):
 # ─────────────────────────────
 # 1.  Stepper‑motor routes
 # ─────────────────────────────
+
+# Mocked motor actions (instead of interacting with real hardware)
+def mock_start_motors_slow():
+    print("Mocked: Stepper motors started slowly.")
+
+def mock_stop_motors():
+    print("Mocked: Stepper motors stopped.")
+
+# Mocked servo actions (instead of interacting with real hardware)
+def mock_push_right():
+    print("Mocked: Servo pushed right.")
+    
+def mock_push_left():
+    print("Mocked: Servo pushed left.")
+
 @home_bp.route("/system_start", methods=["POST"])
 def system_start_route():
     """
-    Starts the conveyor / stepper motors (slow forward).
+    Starts the conveyor / stepper motors (mocked).
     """
     try:
-        start_motors_slow()
+        mock_start_motors_slow()
         return jsonify({"message": "Stepper started"}), 200
     except Exception as ex:
         return jsonify({"error": f"Stepper start failed: {ex}"}), 500
@@ -46,19 +61,18 @@ def system_start_route():
 @home_bp.route("/system_stop", methods=["POST"])
 def system_stop_route():
     """
-    Stops the conveyor / stepper motors immediately.
+    Stops the conveyor / stepper motors immediately (mocked).
     """
     try:
-        stop_motors()
+        mock_stop_motors()
         return jsonify({"message": "Stepper stopped"}), 200
     except Exception as ex:
         return jsonify({"error": f"Stepper stop failed: {ex}"}), 500
 
 SERVO_ACTIONS = {
-    "Paper": push_right,
-    "Plastic": push_left
+    "Paper": mock_push_right,
+    "Plastic": mock_push_left
 }
-
 # ─────────────────────────────
 # 2.  Servo routes
 # ─────────────────────────────
@@ -66,7 +80,7 @@ SERVO_ACTIONS = {
 @home_bp.route("/servo_push", methods=["POST"])
 def servo_push_route():
     """
-    Move the servo based on waste class sent in POST body:
+    Move the servo based on waste class sent in POST body (mocked).
     - Paper: push right
     - Plastic: push left
     - Other: no action
@@ -118,11 +132,12 @@ def evaluate_route():
         current_app.logger.info(f"Prediction: {label} ({confidence_str})")
     except Exception as e:
         return jsonify({"error": f"Model error: {e}"}), 500
+
     if float(confidence_str) > threshold and label in SERVO_ACTIONS:
         try:
-            time.sleep(1.7)  # wait until the product reaces the end of the belt
+            time.sleep(1.7)  # wait until the product reaches the end of the belt
             SERVO_ACTIONS[label]()  # Actuate servo
-            start_motors_slow()
+            mock_start_motors_slow()  # Simulate motor start
         except Exception as e:
             return jsonify({"error": f"Hardware action failed: {e}"}), 500
 
