@@ -133,6 +133,14 @@ def evaluate_route():
     except Exception as e:
         return jsonify({"error": f"Model error: {e}"}), 500
 
+    # Determine the text to send to frontend based on label
+    if label in ['Other', 'Paper', 'Plastic']:
+        prediction_text = f"Prediction: {label}"  # If it's Other, Paper, or Plastic
+    elif label == 'Track':
+        prediction_text = "Waiting for next waste product..."  # If it's Track
+    else:
+        prediction_text = "Unknown label"
+
     if float(confidence_str) > threshold and label in SERVO_ACTIONS:
         try:
             time.sleep(1.7)  # wait until the product reaches the end of the belt
@@ -157,6 +165,7 @@ def evaluate_route():
         "image_name": filename,
         "file_path": saved_path,
         "label": label,
+        "prediction_text": prediction_text,  # Send the prediction_text to frontend
         "confidence": confidence_str,
         "inserted_id": inserted_id
     }), 200
