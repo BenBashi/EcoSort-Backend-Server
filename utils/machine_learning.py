@@ -107,7 +107,7 @@ def run_test_environment(pil_img):
     - Classifies the given PIL image
     - Returns (label, confidence_str)
     """
-    class_names = ["Plastic", "Paper", "Other", "Track"]
+    class_names = ["Plastic", "Paper", "Other", "None"]
 
     model, device = load_model_weights(model_path_default)
     transform = get_transform()

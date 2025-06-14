@@ -22,8 +22,8 @@ except errors.PyMongoError as e:
     raise  # Optionally handle differently in production
 
 # Allowed values for fields
-ALLOWED_SYSTEM_ANALYSIS = {"Paper", "Plastic", "Other", "Track"}
-ALLOWED_IMAGE_CLASS = {"Paper", "Plastic", "Other", "Track", None}
+ALLOWED_SYSTEM_ANALYSIS = {"Paper", "Plastic", "Other", "None"}
+ALLOWED_IMAGE_CLASS = {"Paper", "Plastic", "Other", "None", None}
 
 def validate_sample(sample_data, require_all_fields=True):
     """
