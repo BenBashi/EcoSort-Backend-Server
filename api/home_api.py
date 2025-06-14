@@ -78,7 +78,7 @@ def servo_push_route():
         return jsonify({"error": "Missing 'label' in request body"}), 400
 
     if label in ("Other", "Track"):
-        return jsonify({"message": "Label is 'Other' or 'Track'; no servo action taken."}), 200
+        return jsonify({"message": "Waste product is 'Other' or 'None'; no servo action taken."}), 200
 
     action = SERVO_ACTIONS.get(label)
     if not action:
