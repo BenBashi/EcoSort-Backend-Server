@@ -77,8 +77,8 @@ def servo_push_route():
     if not label:
         return jsonify({"error": "Missing 'label' in request body"}), 400
 
-    if label in ("Other", "None"):
-        return jsonify({"message": "Label is 'Other' or 'None'; no servo action taken."}), 200
+    if label in ("Other", "Track"):
+        return jsonify({"message": "Label is 'Other' or 'Track'; no servo action taken."}), 200
 
     action = SERVO_ACTIONS.get(label)
     if not action:
@@ -127,8 +127,8 @@ def evaluate_route():
         except Exception as e:
             return jsonify({"error": f"Hardware action failed: {e}"}), 500
 
-    # Skip saving to the DB if the label is "None"
-    if label != 'None':
+    # Skip saving to the DB if the label is "Track"
+    if label != 'Track':
         try:
             inserted_id = create_sample({
                 "image_name": os.path.basename(saved_path),
@@ -140,7 +140,7 @@ def evaluate_route():
         except Exception as e:
             return jsonify({"error": f"DB error: {e}"}), 500
     else:
-        inserted_id = None  # No DB insertion for 'None' label
+        inserted_id = None  # No DB insertion for 'Track' label
 
     return jsonify({
         "message": "Success",
