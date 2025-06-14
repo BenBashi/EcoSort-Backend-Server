@@ -12,7 +12,7 @@ from utils.arduino import (
 )
 from data.mongo_db import create_sample
 import uuid
-import os, atexit, time 
+import os, atexit, time
 
 home_bp = Blueprint("home_bp", __name__)
 # ──────────────────────────────────────────────────────────────────────────────
@@ -77,14 +77,15 @@ def servo_push_route():
     if not label:
         return jsonify({"error": "Missing 'label' in request body"}), 400
 
-    if label == "Other":
-        return jsonify({"message": "Label is 'Other'; no servo action taken."}), 200
+    if label in ("Other", "Track"):
+        return jsonify({"message": "Waste product is 'Other' or 'None'; no servo action taken."}), 200
 
     action = SERVO_ACTIONS.get(label)
     if not action:
         return jsonify({"error": f"Unknown label: {label}"}), 400
 
     try:
+        time.sleep(1.7)  # wait until the product reaces the end of the belt
         action()  # push_right() or push_left()
         return jsonify({"message": f"Servo pushed for {label}"}), 200
     except Exception as ex:
@@ -117,23 +118,29 @@ def evaluate_route():
         current_app.logger.info(f"Prediction: {label} ({confidence_str})")
     except Exception as e:
         return jsonify({"error": f"Model error: {e}"}), 500
+
     if float(confidence_str) > threshold and label in SERVO_ACTIONS:
         try:
+            time.sleep(1.7)  # wait until the product reaces the end of the belt
             SERVO_ACTIONS[label]()  # Actuate servo
             start_motors_slow()
         except Exception as e:
             return jsonify({"error": f"Hardware action failed: {e}"}), 500
 
-    try:
-        inserted_id = create_sample({
-            "image_name": os.path.basename(saved_path),
-            "file_path": saved_path,
-            "system_analysis": label,
-            "image_class": None,
-            "confidence_percentage": confidence_str
-        })
-    except Exception as e:
-        return jsonify({"error": f"DB error: {e}"}), 500
+    # Skip saving to the DB if the label is "Track"
+    if label != 'Track':
+        try:
+            inserted_id = create_sample({
+                "image_name": os.path.basename(saved_path),
+                "file_path": saved_path,
+                "system_analysis": label,
+                "image_class": None,
+                "confidence_percentage": confidence_str
+            })
+        except Exception as e:
+            return jsonify({"error": f"DB error: {e}"}), 500
+    else:
+        inserted_id = None  # No DB insertion for 'Track' label
 
     return jsonify({
         "message": "Success",

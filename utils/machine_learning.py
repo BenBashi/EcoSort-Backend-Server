@@ -16,7 +16,7 @@ MODEL_URL = os.environ.get("MODEL_URL", "")
 # -----------------------------------------------------------------------------
 # 1. Download the model file ONCE (if it doesn't exist yet)
 # -----------------------------------------------------------------------------
-model_path_default = "./resnet50_recycling.pth"
+model_path_default = "./resnet50_recycling_adjusted.pth"
 if not os.path.exists(model_path_default):
     gdown.download(MODEL_URL, model_path_default, quiet=False)
 
@@ -28,7 +28,7 @@ def create_model():
     """
     Create a ResNet50 model:
       - freeze all layers except layer4
-      - replace final FC layer with a 3-class output
+      - replace final FC layer with a 4-class output
     """
     model = models.resnet50(pretrained=True)
 
@@ -40,8 +40,8 @@ def create_model():
     for param in model.layer4.parameters():
         param.requires_grad = True
 
-    # Replace the final classifier with a 3-class output
-    model.fc = nn.Linear(model.fc.in_features, 3)
+    # Replace the final classifier with a 4-class output
+    model.fc = nn.Linear(model.fc.in_features, 4)
     return model
 
 def load_model_weights(model_path):
@@ -107,7 +107,7 @@ def run_test_environment(pil_img):
     - Classifies the given PIL image
     - Returns (label, confidence_str)
     """
-    class_names = ["Plastic", "Paper", "Other"]
+    class_names = ["Plastic", "Paper", "Other", "Track"]
 
     model, device = load_model_weights(model_path_default)
     transform = get_transform()
