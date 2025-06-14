@@ -6,6 +6,8 @@ from data.mongo_db import (
     get_sample_by_id,
     delete_all_samples
 )
+import os
+import shutil
 
 dashboard_bp = Blueprint("dashboard_bp", __name__)
 
@@ -94,6 +96,40 @@ def calculate_accuracy_route():
 
     accuracy = (correct / total) * 100
     return jsonify({"accuracy": accuracy}), 200
+
+@dashboard_bp.route("/copy_uncertain/<sample_id>", methods=["POST"])
+def copy_uncertain_image_route(sample_id):
+    """
+    Copies an image to the appropriate folder based on trueClass.
+    Expects JSON: { "trueClass": "Paper" | "Plastic" | "Other" | "Track" }
+    """
+
+    data = request.json
+    true_class = data.get("trueClass")
+    if not sample_id or not true_class:
+        return jsonify({"error": "Missing sample_id or trueClass"}), 400
+
+    try:
+        sample = get_sample_by_id(sample_id)
+        if not sample:
+            return jsonify({"error": "Sample not found"}), 404
+
+        folder_map = {
+            "Paper": "paper",
+            "Plastic": "plastic",
+            "Other": "other",
+            "Track": "track"
+        }
+        folder = folder_map.get(true_class)
+        src_path = sample.get("file_path")
+        if src_path and os.path.exists(src_path):
+            dest_dir = os.path.join("images", "low_confidence", folder)
+            os.makedirs(dest_dir, exist_ok=True)
+            dest_path = os.path.join(dest_dir, os.path.basename(src_path))
+            shutil.copy2(src_path, dest_path)
+        return jsonify({"message": "Image copied"}), 200
+    except Exception as ex:
+        return jsonify({"error": f"Error: {ex}"}), 500
 
 @dashboard_bp.route("/default_model", methods=["POST"])
 def default_model_route():
