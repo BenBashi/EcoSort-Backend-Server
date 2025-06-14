@@ -119,24 +119,13 @@ def evaluate_route():
     except Exception as e:
         return jsonify({"error": f"Model error: {e}"}), 500
 
-    if float(confidence_str) > threshold:
-        if label in SERVO_ACTIONS:
-            try:
-                time.sleep(1.7)  # wait until the product reaces the end of the belt
-                SERVO_ACTIONS[label]()  # Actuate servo
-                start_motors_slow()
-            except Exception as e:
-                return jsonify({"error": f"Hardware action failed: {e}"}), 500
-    else:
-        low_conf_dir = os.path.join("images", "low_confidence")
-        os.makedirs(low_conf_dir, exist_ok=True)
-        low_conf_path = os.path.join(low_conf_dir, filename)
+    if float(confidence_str) > threshold and label in SERVO_ACTIONS:
         try:
-            pil_img.save(low_conf_path)
-            current_app.logger.info(f"Low-confidence image saved: {low_conf_path}")
+            time.sleep(1.7)  # wait until the product reaces the end of the belt
+            SERVO_ACTIONS[label]()  # Actuate servo
+            start_motors_slow()
         except Exception as e:
-            current_app.logger.error(f"Failed to save low-confidence image: {e}")
-
+            return jsonify({"error": f"Hardware action failed: {e}"}), 500
 
     # Skip saving to the DB if the label is "Track"
     if label != 'Track':
