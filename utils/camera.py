@@ -13,8 +13,8 @@ def capture_image_and_load(save_dir, filename="captured_image.jpg"):
         raise RuntimeError("Could not open camera.")
 
     # # 🔧 Set higher resolution (adjust based on your webcam's capability)
-    # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-    # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
     # 📸 Warm-up: discard initial frames
     for _ in range(5):
