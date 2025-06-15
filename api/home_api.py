@@ -1,7 +1,7 @@
 # api/home_api.py
 from flask import Blueprint, jsonify, current_app, request
 from utils.camera import capture_image_and_load
-from utils.machine_learning import run_test_environment
+from utils.machine_learning import run_test_environment, retrain_fewshot_model
 from utils.arduino import (
     initialize_connection,
     close_connection,
@@ -152,3 +152,16 @@ def evaluate_route():
     }), 200
 
 atexit.register(close_connection)
+
+@home_bp.route("/retrain", methods=["POST"])
+def retrain_endpoint():
+    retrain_fewshot_model(
+        uncertain_root="./images/low_confidence",
+        filler_root="./original_dataset",
+        model_weights_path="./resnet50_recycling_adjusted.pth",
+        output_weights_path="./resnet50_recycling_retrained.pth"
+    )
+    return jsonify({
+        "status": "Success", 
+        "message": "Retraining complete"
+    }), 200
