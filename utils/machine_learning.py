@@ -27,7 +27,6 @@ ORIGINAL_DATASET_DIR = "./original_dataset"
 BALANCED_DATASET_DIR = "./balanced_fewshot_dataset"
 RETRAINED_MODEL_PATH = "./resnet50_recycling_retrained.pth"
 CLASSES = ["Plastic", "Paper", "Other", "Track"]
-MIN_IMAGES_PER_CLASS = 5  # few-shot target
 
 # -----------------------------------------------------------------------------
 # Download the model file ONCE (if it doesn't exist yet)
@@ -150,58 +149,96 @@ def get_augmented_transform():
 
 
 # -----------------------------------------------------------------------------
-# Load & Balance Few-Shot Data from uncertain_images + original_dataset
+# Load & Balance Few-Shot Data from uncertain images + original_dataset
 # -----------------------------------------------------------------------------
 def prepare_balanced_fewshot_dataset(uncertain_root, filler_root, transform):
     """
     Ensures all classes have the same number of samples (equal to the max).
     Returns a balanced Subset and class_to_idx.
+    If no uncertain images exist at all, returns (None, None).
     """
 
-    # Make sure Kaggle directory and API token are set up
+    # Setup Kaggle API credentials
     os.makedirs(os.path.expanduser("~/.kaggle"), exist_ok=True)
     with open(os.path.expanduser("~/.kaggle/kaggle.json"), "w") as f:
         f.write(f'{{"username":"{KAGGLE_USERNAME}","key":"{KAGGLE_KEY}"}}')
-
     os.chmod(os.path.expanduser("~/.kaggle/kaggle.json"), 0o600)
 
-    # Download and unzip dataset
-    subprocess.run([
-    "kaggle", "datasets", "download", "-d", KAGGLE_DATASET_URL, "-p", ORIGINAL_DATASET_DIR, "--unzip"],
-    check=True)
-    
-    # Load uncertain dataset
-    uncertain_dataset = datasets.ImageFolder(uncertain_root, transform=transform)
-    class_to_idx = uncertain_dataset.class_to_idx
+    # Download and unzip dataset if not present
+    if not os.path.exists("./original_dataset") or not os.listdir("./original_dataset"):
+        print("Downloading from Kaggle...")
+        subprocess.run([
+            "kaggle", "datasets", "download", "-d", KAGGLE_DATASET_URL,
+            "-p", ORIGINAL_DATASET_DIR, "--unzip"
+        ], check=True)
+
+    # Prepare uncertain dataset class mapping manually (handle missing folders)
+    class_to_idx = {cls_name: i for i, cls_name in enumerate(["plastic", "paper", "other", "track"])}
     idx_to_class = {v: k for k, v in class_to_idx.items()}
-    
-    # Group uncertain images by class
-    class_indices = defaultdict(list)
-    for idx, (_, label) in enumerate(uncertain_dataset):
-        class_indices[label].append(idx)
-    
-    # Determine target count (maximum class size)
-    max_samples = max(len(indices) for indices in class_indices.values())
-    
-    # Add filler images from original dataset if needed
-    all_indices = []
-    for class_id, indices in class_indices.items():
-        needed = max_samples - len(indices)
-        all_indices.extend(indices)
+
+    image_paths_by_class = defaultdict(list)
+    supported_extensions = ('.jpg', '.jpeg', '.png', '.bmp', '.tif', '.tiff', '.webp')
+
+    for cls_name in class_to_idx:
+        class_dir = os.path.join(uncertain_root, cls_name)
+        if not os.path.isdir(class_dir):
+            continue
+        for fname in os.listdir(class_dir):
+            if fname.lower().endswith(supported_extensions):
+                image_paths_by_class[cls_name].append(os.path.join(class_dir, fname))
+
+    # Abort early if no uncertain images at all
+    total_images = sum(len(paths) for paths in image_paths_by_class.values())
+    if total_images == 0:
+        print("No images found in uncertain images path.")
+        return None, None
+
+    # Determine max class size
+    max_samples = max(len(paths) for paths in image_paths_by_class.values())
+
+    # Fill all classes up to max_samples using filler
+    final_images = []
+    final_labels = []
+
+    for cls_name, label_id in class_to_idx.items():
+        paths = image_paths_by_class.get(cls_name, [])
+        needed = max_samples - len(paths)
+
+        final_images.extend(paths)
+        final_labels.extend([label_id] * len(paths))
 
         if needed > 0:
-            class_name = idx_to_class[class_id]
-            filler_path = os.path.join(filler_root, class_name)
-            filler_dataset = datasets.ImageFolder(filler_root, transform=transform)
-            
-            # Filter only relevant class
-            class_label = filler_dataset.class_to_idx[class_name]
-            class_indices_filler = [i for i, (_, lbl) in enumerate(filler_dataset) if lbl == class_label]
-            random.shuffle(class_indices_filler)
-            all_indices.extend(class_indices_filler[:needed])
-    
-    balanced_subset = Subset(uncertain_dataset, all_indices)
-    return balanced_subset, class_to_idx
+            filler_dir = os.path.join(filler_root, cls_name)
+            if not os.path.isdir(filler_dir):
+                continue
+            filler_candidates = [
+                os.path.join(filler_dir, f)
+                for f in os.listdir(filler_dir)
+                if f.lower().endswith(supported_extensions)
+            ]
+            random.shuffle(filler_candidates)
+            final_images.extend(filler_candidates[:needed])
+            final_labels.extend([label_id] * min(needed, len(filler_candidates)))
+
+    # Wrap in a custom dataset to support Subset
+    from torchvision.datasets.folder import default_loader
+    class FewShotImageDataset(torch.utils.data.Dataset):
+        def __init__(self, image_paths, labels, transform):
+            self.image_paths = image_paths
+            self.labels = labels
+            self.transform = transform
+
+        def __len__(self):
+            return len(self.image_paths)
+
+        def __getitem__(self, idx):
+            image = default_loader(self.image_paths[idx])
+            if self.transform:
+                image = self.transform(image)
+            return image, self.labels[idx]
+
+    balanced_dataset = FewShotImageDataset(final_images, final_labels, transform)
+    return balanced_dataset, class_to_idx
 
 
 # -----------------------------------------------------------------------------
@@ -231,6 +268,12 @@ def retrain_fewshot_model(uncertain_root, filler_root, model_weights_path, outpu
         filler_root=filler_root,
         transform=transform
     )
+
+    # If no data is available, skip training
+    if balanced_subset is None:
+        print("❌ Retraining skipped: No images found in uncertain_root.")
+        return
+
     loader = DataLoader(balanced_subset, batch_size=8, shuffle=True)
 
     # Retrain
@@ -241,15 +284,27 @@ def retrain_fewshot_model(uncertain_root, filler_root, model_weights_path, outpu
 
     for epoch in range(epochs):
         running_loss = 0.0
+        correct = 0
+        total = 0
+
         for images, labels in tqdm(loader, desc=f"Epoch {epoch+1}/{epochs}"):
             images, labels = images.to(device), labels.to(device)
+
             optimizer.zero_grad()
             outputs = model(images)
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
+
             running_loss += loss.item()
-        print(f"Epoch {epoch+1} Loss: {running_loss:.4f}")
+
+            _, predicted = torch.max(outputs.data, 1)
+            correct += (predicted == labels).sum().item()
+            total += labels.size(0)
+
+        epoch_loss = running_loss / len(loader)
+        epoch_accuracy = 100 * correct / total
+        print(f"📊 Epoch {epoch+1} - Loss: {epoch_loss:.4f} | Accuracy: {epoch_accuracy:.2f}%")
 
     # Save updated model
     torch.save(model.state_dict(), output_weights_path)
