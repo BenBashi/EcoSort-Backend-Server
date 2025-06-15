@@ -81,7 +81,7 @@ def load_model_weights(model_path):
 def get_transform():
     return transforms.Compose([
         transforms.Resize((224, 224)),
-        RandAugment(num_ops=2, magnitude=5),  # Reduced magnitude
+        RandAugment(num_ops=2, magnitude=5),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406],
                              std=[0.229, 0.224, 0.225])
@@ -204,7 +204,7 @@ def prepare_balanced_fewshot_dataset(uncertain_root, filler_root, transform, out
         return None, None
 
     # Determine max class size
-    max_samples = max(len(paths) for paths in image_paths_by_class.values())
+    target_per_class = max(50, max(len(paths) for paths in image_paths_by_class.values()))
 
     # Fill all classes up to max_samples using filler
     final_images = []
@@ -212,7 +212,7 @@ def prepare_balanced_fewshot_dataset(uncertain_root, filler_root, transform, out
 
     for cls_name, label_id in class_to_idx.items():
         paths = image_paths_by_class.get(cls_name, [])
-        needed = max_samples - len(paths)
+        needed = target_per_class - len(paths)
 
         final_images.extend(paths)
         final_labels.extend([label_id] * len(paths))
@@ -280,11 +280,11 @@ def retrain_fewshot_model(uncertain_root, filler_root, model_weights_path, outpu
     model.load_state_dict(torch.load(model_weights_path, map_location=device))
     model.to(device)
 
-    # Freeze everything except final FC
-    for param in model.parameters():
-        param.requires_grad = False
-    for param in model.fc.parameters():
-        param.requires_grad = True
+    for name, param in model.named_parameters():
+        if "layer4" in name or "fc" in name:
+            param.requires_grad = True
+        else:
+            param.requires_grad = False
 
     # Prepare dataset
     transform = get_augmented_transform()
@@ -303,8 +303,8 @@ def retrain_fewshot_model(uncertain_root, filler_root, model_weights_path, outpu
 
     # Retrain
     model.train()
-    criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.fc.parameters(), lr=1e-4)
+    criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
+    optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=1e-5)
     epochs = 5
 
     for epoch in range(epochs):
