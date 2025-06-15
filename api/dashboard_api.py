@@ -113,7 +113,7 @@ def default_model_route():
 def retrain_endpoint():
     retrain_fewshot_model(
         uncertain_root="./images/low_confidence",
-        filler_root="./original_dataset",
+        filler_root="./original_dataset/train/",
         model_weights_path="./resnet50_recycling_adjusted.pth",
         output_weights_path="./resnet50_recycling_retrained.pth"
     )

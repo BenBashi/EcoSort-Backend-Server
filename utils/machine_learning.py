@@ -2,6 +2,7 @@ import os
 import shutil
 import random
 import gdown
+import zipfile
 import torch
 import subprocess
 import torch.nn as nn
@@ -14,6 +15,7 @@ from PIL import Image
 import numpy as np
 from dotenv import load_dotenv
 from collections import defaultdict
+import csv  # Add import for CSV file creation
 
 
 # Load Configuration
@@ -22,6 +24,7 @@ MODEL_URL = os.environ.get("MODEL_URL", "")
 KAGGLE_USERNAME = os.environ.get("KAGGLE_USERNAME")
 KAGGLE_KEY = os.environ.get("KAGGLE_KEY")
 KAGGLE_DATASET_URL = os.environ.get("KAGGLE_DATASET_URL")
+TRACK_IMAGES_URL = os.environ.get("TRACK_IMAGES_URL") 
 UNCERTAIN_DIR = "./images/low_confidence"
 ORIGINAL_DATASET_DIR = "./original_dataset"
 BALANCED_DATASET_DIR = "./balanced_fewshot_dataset"
@@ -76,16 +79,14 @@ def load_model_weights(model_path):
 # Transform & Prediction
 # -----------------------------------------------------------------------------
 def get_transform():
-    """
-    Standard transform: resize to 224x224, convert to tensor, normalize with
-    ImageNet means & std.
-    """
     return transforms.Compose([
         transforms.Resize((224, 224)),
+        RandAugment(num_ops=2, magnitude=5),  # Reduced magnitude
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406],
                              std=[0.229, 0.224, 0.225])
     ])
+
 
 def predict_recycling_class(pil_img, model, device, transform):
     """
@@ -151,13 +152,13 @@ def get_augmented_transform():
 # -----------------------------------------------------------------------------
 # Load & Balance Few-Shot Data from uncertain images + original_dataset
 # -----------------------------------------------------------------------------
-def prepare_balanced_fewshot_dataset(uncertain_root, filler_root, transform):
+def prepare_balanced_fewshot_dataset(uncertain_root, filler_root, transform, output_csv_path="./balanced_dataset_labels.csv"):
     """
     Ensures all classes have the same number of samples (equal to the max).
+    Creates a CSV file with image paths and labels.
     Returns a balanced Subset and class_to_idx.
     If no uncertain images exist at all, returns (None, None).
     """
-
     # Setup Kaggle API credentials
     os.makedirs(os.path.expanduser("~/.kaggle"), exist_ok=True)
     with open(os.path.expanduser("~/.kaggle/kaggle.json"), "w") as f:
@@ -171,6 +172,14 @@ def prepare_balanced_fewshot_dataset(uncertain_root, filler_root, transform):
             "kaggle", "datasets", "download", "-d", KAGGLE_DATASET_URL,
             "-p", ORIGINAL_DATASET_DIR, "--unzip"
         ], check=True)
+    
+    # Add Track photos that are not in the Kaggle dataset
+    if not os.path.exists("./original_dataset/train/track") or not os.listdir("./original_dataset/train/track"):
+        print("Adding Track images to original dataset...")
+        gdown.download(TRACK_IMAGES_URL, "./original_dataset/train/track.zip", quiet=False)
+        with zipfile.ZipFile("./original_dataset/train/track.zip", "r") as zip_ref:
+            zip_ref.extractall("./original_dataset/train/")
+        os.remove("./original_dataset/train/track.zip")
 
     # Prepare uncertain dataset class mapping manually (handle missing folders)
     class_to_idx = {cls_name: i for i, cls_name in enumerate(["plastic", "paper", "other", "track"])}
@@ -182,6 +191,7 @@ def prepare_balanced_fewshot_dataset(uncertain_root, filler_root, transform):
     for cls_name in class_to_idx:
         class_dir = os.path.join(uncertain_root, cls_name)
         if not os.path.isdir(class_dir):
+            print(f"Warning: Missing directory for class '{cls_name}' in uncertain_root.")
             continue
         for fname in os.listdir(class_dir):
             if fname.lower().endswith(supported_extensions):
@@ -210,15 +220,30 @@ def prepare_balanced_fewshot_dataset(uncertain_root, filler_root, transform):
         if needed > 0:
             filler_dir = os.path.join(filler_root, cls_name)
             if not os.path.isdir(filler_dir):
+                print(f"Warning: Missing filler directory for class '{cls_name}' in filler_root.")
                 continue
+
             filler_candidates = [
                 os.path.join(filler_dir, f)
                 for f in os.listdir(filler_dir)
                 if f.lower().endswith(supported_extensions)
             ]
+            print(f"Found {len(filler_candidates)} filler images for class '{cls_name}'.")
+
             random.shuffle(filler_candidates)
             final_images.extend(filler_candidates[:needed])
             final_labels.extend([label_id] * min(needed, len(filler_candidates)))
+
+            if len(filler_candidates) < needed:
+                print(f"Warning: Insufficient filler images for class '{cls_name}'. Needed: {needed}, Found: {len(filler_candidates)}")
+
+    # Create CSV file with image paths and labels
+    with open(output_csv_path, mode="w", newline="") as csv_file:
+        writer = csv.writer(csv_file)
+        writer.writerow(["image_path", "label"])
+        for img_path, label in zip(final_images, final_labels):
+            writer.writerow([img_path, idx_to_class[label]])
+    print(f"✅ CSV file created at: {output_csv_path}")
 
     # Wrap in a custom dataset to support Subset
     from torchvision.datasets.folder import default_loader
@@ -271,7 +296,7 @@ def retrain_fewshot_model(uncertain_root, filler_root, model_weights_path, outpu
 
     # If no data is available, skip training
     if balanced_subset is None:
-        print("❌ Retraining skipped: No images found in uncertain_root.")
+        print("Retraining skipped: No images found in uncertain_root.")
         return
 
     loader = DataLoader(balanced_subset, batch_size=8, shuffle=True)
