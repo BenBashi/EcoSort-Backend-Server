@@ -1,4 +1,10 @@
 from flask import Blueprint, request, jsonify
+from utils.machine_learning import (
+    create_model, 
+    get_augmented_transform, 
+    prepare_balanced_fewshot_dataset, 
+    retrain_fewshot_model
+)
 from data.mongo_db import (
     update_sample,
     get_samples,
@@ -104,12 +110,17 @@ def default_model_route():
     return jsonify({"message": "Default model reactivated"}), 200
 
 @dashboard_bp.route("/retrain", methods=["POST"])
-def retrain_route():
-    """
-    Retrains the model with updated/mislabeled data.
-    (Placeholder)
-    """
-    return jsonify({"message": "Retraining started..."}), 200
+def retrain_endpoint():
+    retrain_fewshot_model(
+        uncertain_root="./images/low_confidence",
+        filler_root="./original_dataset",
+        model_weights_path="./resnet50_recycling_adjusted.pth",
+        output_weights_path="./resnet50_recycling_retrained.pth"
+    )
+    return jsonify({
+        "status": "Success", 
+        "message": "Retraining complete"
+    }), 200
 
 @dashboard_bp.route("/delete_result", methods=["POST"])
 def delete_result_route():
