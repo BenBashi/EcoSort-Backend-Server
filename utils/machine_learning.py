@@ -15,7 +15,7 @@ from PIL import Image
 import numpy as np
 from dotenv import load_dotenv
 from collections import defaultdict
-import csv  # Add import for CSV file creation
+import csv
 
 
 # Load Configuration
@@ -136,13 +136,14 @@ def run_test_environment(pil_img):
     
     return label, confidence_str
 
+
 # -----------------------------------------------------------------------------
 # Strong Transform with RandAugment For Retraining
 # -----------------------------------------------------------------------------
 def get_augmented_transform():
     return transforms.Compose([
         transforms.Resize((224, 224)),
-        RandAugment(num_ops=2, magnitude=9),  # Strong augmentation
+        RandAugment(num_ops=2, magnitude=5),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406],
                              std=[0.229, 0.224, 0.225])
