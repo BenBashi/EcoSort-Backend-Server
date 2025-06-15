@@ -1,7 +1,7 @@
 # api/home_api.py
 from flask import Blueprint, jsonify, current_app, request
 from utils.camera import capture_image_and_load
-from utils.machine_learning import run_test_environment, retrain_fewshot_model
+from utils.machine_learning import run_test_environment
 from utils.arduino import (
     initialize_connection,
     close_connection,
@@ -29,7 +29,7 @@ def _init_serial(state):
 # ──────────────────────────────────────────────────────────────────────────────
 
 # ─────────────────────────────
-# 1.  Stepper‑motor routes
+# Stepper‑motor routes
 # ─────────────────────────────
 @home_bp.route("/system_start", methods=["POST"])
 def system_start_route():
@@ -60,7 +60,7 @@ SERVO_ACTIONS = {
 }
 
 # ─────────────────────────────
-# 2.  Servo routes
+# Servo routes
 # ─────────────────────────────
 
 @home_bp.route("/servo_push", methods=["POST"])
@@ -92,7 +92,7 @@ def servo_push_route():
         return jsonify({"error": f"Servo push failed: {ex}"}), 500
 
 # ─────────────────────────────
-# 3.  Image‑capture / prediction route
+# Image‑capture / prediction route
 # ─────────────────────────────
 
 @home_bp.route("/evaluate", methods=["POST"])
@@ -152,16 +152,3 @@ def evaluate_route():
     }), 200
 
 atexit.register(close_connection)
-
-@home_bp.route("/retrain", methods=["POST"])
-def retrain_endpoint():
-    retrain_fewshot_model(
-        uncertain_root="./images/low_confidence",
-        filler_root="./original_dataset",
-        model_weights_path="./resnet50_recycling_adjusted.pth",
-        output_weights_path="./resnet50_recycling_retrained.pth"
-    )
-    return jsonify({
-        "status": "Success", 
-        "message": "Retraining complete"
-    }), 200
