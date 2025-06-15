@@ -22,8 +22,11 @@ home_bp = Blueprint("home_bp", __name__)
 def _init_serial(state):
     """Runs exactly once, when the blueprint is registered."""
     try:
-        initialize_connection()
-        state.app.logger.info("Arduino serial connection initialised.")
+        # initialize_connection()
+        # state.app.logger.info("Arduino serial connection initialised.")
+
+        # Mocking the Arduino initialization (skipping real connection)Add commentMore actions
+        print("Mocked Arduino serial connection initialised.")
     except Exception as e:
         state.app.logger.error(f"Arduino init failed: {e}")
 # ──────────────────────────────────────────────────────────────────────────────
@@ -31,13 +34,30 @@ def _init_serial(state):
 # ─────────────────────────────
 # Stepper‑motor routes
 # ─────────────────────────────
+
+# Mocked motor actions (instead of interacting with real hardware)
+def mock_start_motors_slow():
+    print("Mocked: Stepper motors started slowly.")
+
+def mock_stop_motors():
+    print("Mocked: Stepper motors stopped.")
+
+# Mocked servo actions (instead of interacting with real hardware)
+def mock_push_right():
+    print("Mocked: Servo pushed right.")
+    
+def mock_push_left():
+    print("Mocked: Servo pushed left.")
+
+
 @home_bp.route("/system_start", methods=["POST"])
 def system_start_route():
     """
     Starts the conveyor / stepper motors (slow forward).
     """
     try:
-        start_motors_slow()
+        # start_motors_slow()
+        mock_start_motors_slow()
         return jsonify({"message": "Stepper started"}), 200
     except Exception as ex:
         return jsonify({"error": f"Stepper start failed: {ex}"}), 500
@@ -49,14 +69,20 @@ def system_stop_route():
     Stops the conveyor / stepper motors immediately.
     """
     try:
-        stop_motors()
+        # stop_motors()
+        mock_stop_motors()
         return jsonify({"message": "Stepper stopped"}), 200
     except Exception as ex:
         return jsonify({"error": f"Stepper stop failed: {ex}"}), 500
 
+# SERVO_ACTIONS = {
+#     "Paper": push_right,
+#     "Plastic": push_left
+# }
+
 SERVO_ACTIONS = {
-    "Paper": push_right,
-    "Plastic": push_left
+    "Paper": mock_push_right,
+    "Plastic": mock_push_left
 }
 
 # ─────────────────────────────
