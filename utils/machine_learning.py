@@ -44,6 +44,7 @@ model_path = model_path_default
 # Model creation & loading
 # -----------------------------------------------------------------------------
 def create_model():
+    model_path
     """
     Create a ResNet50 model:
       - freeze all layers except layer4
@@ -276,6 +277,7 @@ def retrain_fewshot_model(uncertain_root, filler_root, model_weights_path, outpu
     Retrains your model on a few-shot balanced dataset using strong augmentations.
     Saves the updated model weights to output_weights_path.
     """
+    global model_path
     # Load model
     model = create_model()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -347,3 +349,11 @@ def retrain_fewshot_model(uncertain_root, filler_root, model_weights_path, outpu
                 if os.path.isfile(file_path):
                     os.remove(file_path)
 
+def reset_model():
+    """
+    Resets the model to the default pre-trained weights.
+    """
+    global model_path
+    model_path = model_path_default
+    print(f"Resetting model path to default: {model_path}")
+    return model_path
