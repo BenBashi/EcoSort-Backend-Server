@@ -38,6 +38,7 @@ model_path_default = "./resnet50_recycling_adjusted.pth"
 if not os.path.exists(model_path_default):
     gdown.download(MODEL_URL, model_path_default, quiet=False)
 
+model_path = model_path_default
 
 # -----------------------------------------------------------------------------
 # Model creation & loading
@@ -123,8 +124,8 @@ def run_test_environment(pil_img):
     - Classifies the given PIL image
     - Returns (label, confidence_str)
     """
-
-    model, device = load_model_weights(model_path_default)
+    print(f"model path is: {model_path}")
+    model, device = load_model_weights(model_path)
     transform = get_transform()
 
     predicted_idx, confidence, _ = predict_recycling_class(
@@ -334,6 +335,8 @@ def retrain_fewshot_model(uncertain_root, filler_root, model_weights_path, outpu
     # Save updated model
     torch.save(model.state_dict(), output_weights_path)
     print(f"✅ Retrained model saved at: {output_weights_path}")
+    model_path = output_weights_path
+    print(f"Model path updated to: {model_path}")
 
     # Remove all files under images/low_confidence/, keep label folders empty
     for folder in ["other", "track", "paper", "plastic"]:
