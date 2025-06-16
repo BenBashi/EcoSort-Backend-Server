@@ -297,8 +297,7 @@ def retrain_fewshot_model(uncertain_root, filler_root, model_weights_path, outpu
 
     # If no data is available, skip training
     if balanced_subset is None:
-        print("Retraining skipped: No images found in uncertain_root.")
-        return
+        raise ValueError("No new uncertain images found. Retraining aborted.")
 
     loader = DataLoader(balanced_subset, batch_size=8, shuffle=True)
 
@@ -335,3 +334,13 @@ def retrain_fewshot_model(uncertain_root, filler_root, model_weights_path, outpu
     # Save updated model
     torch.save(model.state_dict(), output_weights_path)
     print(f"✅ Retrained model saved at: {output_weights_path}")
+
+    # Remove all files under images/low_confidence/, keep label folders empty
+    for folder in ["other", "track", "paper", "plastic"]:
+        folder_path = os.path.join(UNCERTAIN_DIR, folder)
+        if os.path.exists(folder_path):
+            for file in os.listdir(folder_path):
+                file_path = os.path.join(folder_path, file)
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+
