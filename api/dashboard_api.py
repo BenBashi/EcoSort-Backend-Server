@@ -108,16 +108,29 @@ def default_model_route():
 
 @dashboard_bp.route("/retrain", methods=["POST"])
 def retrain_endpoint():
-    retrain_fewshot_model(
-        uncertain_root="./images/low_confidence",
-        filler_root="./original_dataset/train/",
-        model_weights_path="./resnet50_recycling_adjusted.pth",
-        output_weights_path="./resnet50_recycling_retrained.pth"
-    )
-    return jsonify({
-        "status": "Success", 
-        "message": "Retraining complete"
-    }), 200
+    try:
+        retrain_fewshot_model(
+            uncertain_root="./images/low_confidence",
+            filler_root="./original_dataset/train/",
+            model_weights_path="./resnet50_recycling_adjusted.pth",
+            output_weights_path="./resnet50_recycling_retrained.pth"
+        )
+        return jsonify({
+            "status": "Success", 
+            "message": "Retraining complete"
+        }), 200
+    except ValueError as ve:
+        # Specific error: No images in uncertain dir
+        return jsonify({
+            "status": "Error",
+            "message": str(ve)
+        }), 400
+    except Exception as ex:
+        # Unexpected internal error
+        return jsonify({
+            "status": "Error",
+            "message": "Internal server error"
+        }), 500
 
 @dashboard_bp.route("/delete_result", methods=["POST"])
 def delete_result_route():
