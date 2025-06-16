@@ -140,7 +140,7 @@ def run_test_environment(pil_img):
 # -----------------------------------------------------------------------------
 # Strong Transform with RandAugment For Retraining
 # -----------------------------------------------------------------------------
-def get_augmented_transform():
+def get_augmented_transform_retrain():
     return transforms.Compose([
         transforms.Resize((224, 224)),
         RandAugment(num_ops=2, magnitude=5),
@@ -288,7 +288,7 @@ def retrain_fewshot_model(uncertain_root, filler_root, model_weights_path, outpu
             param.requires_grad = False
 
     # Prepare dataset
-    transform = get_augmented_transform()
+    transform = get_augmented_transform_retrain()
     balanced_subset, class_to_idx = prepare_balanced_fewshot_dataset(
         uncertain_root=uncertain_root,
         filler_root=filler_root,

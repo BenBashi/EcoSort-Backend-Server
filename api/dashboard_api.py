@@ -1,8 +1,5 @@
 from flask import Blueprint, request, jsonify
 from utils.machine_learning import (
-    create_model, 
-    get_augmented_transform, 
-    prepare_balanced_fewshot_dataset, 
     retrain_fewshot_model
 )
 from data.mongo_db import (
