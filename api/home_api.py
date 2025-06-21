@@ -123,7 +123,6 @@ def evaluate_route():
         try:
             time.sleep(1.7)  # wait until the product reaces the end of the belt
             SERVO_ACTIONS[label]()  # Actuate servo
-            start_motors_slow()
         except Exception as e:
             return jsonify({"error": f"Hardware action failed: {e}"}), 500
 
