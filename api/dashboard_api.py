@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from utils.machine_learning import (
-    retrain_fewshot_model
+    retrain_fewshot_model,
+    reset_model
 )
 from data.mongo_db import (
     update_sample,
@@ -140,7 +141,13 @@ def default_model_route():
     Resets the active classifier to the default pre-trained model.
     (Placeholder)
     """
-    return jsonify({"message": "Default model reactivated"}), 200
+    try:
+        reset_model()
+        return jsonify({"message": "Default model reactivated"}), 200
+    except Exception as ex:
+        return jsonify({"Error reseting the model": f"Error: {ex}"}), 500
+
+    
 
 @dashboard_bp.route("/retrain", methods=["POST"])
 def retrain_endpoint():
