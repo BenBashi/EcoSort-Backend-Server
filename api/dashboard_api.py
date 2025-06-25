@@ -135,6 +135,7 @@ def copy_uncertain_image_route(sample_id):
     except Exception as ex:
         return jsonify({"error": f"Error: {ex}"}), 500
 
+
 @dashboard_bp.route("/default_model", methods=["POST"])
 def default_model_route():
     """
@@ -156,6 +157,7 @@ def retrain_endpoint():
             uncertain_root="./images/low_confidence",
             filler_root="./original_dataset/train/",
             model_weights_path="./resnet50_recycling_adjusted.pth",
+            # TODO - add counter instead of overriding weights
             output_weights_path="./resnet50_recycling_retrained.pth"
         )
         return jsonify({

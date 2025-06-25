@@ -197,6 +197,7 @@ def prepare_balanced_fewshot_dataset(uncertain_root, filler_root, transform, out
         class_dir = os.path.join(uncertain_root, cls_name)
         if not os.path.isdir(class_dir):
             print(f"Warning: Missing directory for class '{cls_name}' in uncertain_root.")
+            # create it!
             continue
         for fname in os.listdir(class_dir):
             if fname.lower().endswith(supported_extensions):
@@ -209,6 +210,7 @@ def prepare_balanced_fewshot_dataset(uncertain_root, filler_root, transform, out
         return None, None
 
     # Determine max class size
+    # TODO - we need to change the proportions between images numbers in different classes
     target_per_class = max(50, max(len(paths) for paths in image_paths_by_class.values()))
 
     # Fill all classes up to max_samples using filler
@@ -341,7 +343,8 @@ def retrain_fewshot_model(uncertain_root, filler_root, model_weights_path, outpu
     print(f"✅ Retrained model saved at: {output_weights_path}")
     model_path = output_weights_path
     print(f"Model path updated to: {model_path}")
-
+    
+    # optional TODO - remove the deletion od images
     # Remove all files under images/low_confidence/, keep label folders empty
     for folder in ["other", "track", "paper", "plastic"]:
         folder_path = os.path.join(UNCERTAIN_DIR, folder)
