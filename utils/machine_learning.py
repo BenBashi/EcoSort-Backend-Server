@@ -81,9 +81,11 @@ def load_model_weights(model_path):
 # Transform & Prediction
 # -----------------------------------------------------------------------------
 def get_transform():
+    """
+    Resize to 224x224, convert to tensor and normalize.
+    """
     return transforms.Compose([
         transforms.Resize((224, 224)),
-        RandAugment(num_ops=2, magnitude=5),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406],
                              std=[0.229, 0.224, 0.225])
