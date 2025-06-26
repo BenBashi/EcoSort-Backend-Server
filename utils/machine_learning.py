@@ -159,10 +159,12 @@ def get_augmented_transform_retrain():
 # -----------------------------------------------------------------------------
 def prepare_balanced_fewshot_dataset(uncertain_root, filler_root, transform, output_csv_path="./balanced_dataset_labels.csv"):
     """
-    Ensures all classes have the same number of samples (equal to the max).
-    Creates a CSV file with image paths and labels.
-    Returns a balanced Subset and class_to_idx.
-    If no uncertain images exist at all, returns (None, None).
+    Ensures the proportions of photos in each class match the specified percentages:
+    - Track: 5%
+    - Plastic: 22%
+    - Paper: 25%
+    - Other: 48%
+    Completes the classes using filler images as needed.
     """
     # Setup Kaggle API credentials
     os.makedirs(os.path.expanduser("~/.kaggle"), exist_ok=True)
@@ -196,8 +198,7 @@ def prepare_balanced_fewshot_dataset(uncertain_root, filler_root, transform, out
     for cls_name in class_to_idx:
         class_dir = os.path.join(uncertain_root, cls_name)
         if not os.path.isdir(class_dir):
-            print(f"Warning: Missing directory for class '{cls_name}' in uncertain_root.")
-            # create it!
+            os.mkdir(class_dir)
             continue
         for fname in os.listdir(class_dir):
             if fname.lower().endswith(supported_extensions):
@@ -209,17 +210,26 @@ def prepare_balanced_fewshot_dataset(uncertain_root, filler_root, transform, out
         print("No images found in uncertain images path.")
         return None, None
 
-    # Determine max class size
-    # TODO - we need to change the proportions between images numbers in different classes
-    target_per_class = max(50, max(len(paths) for paths in image_paths_by_class.values()))
+    # Determine the target number of images for each class
+    track_count = max(50, len(image_paths_by_class["track"]))  # Ensure track has at least 50 photos
+    total_target = track_count / 0.05  # Calculate total target based on track's proportion
 
-    # Fill all classes up to max_samples using filler
+    target_counts = {
+        "track": track_count,
+        "plastic": int(total_target * 0.22),
+        "paper": int(total_target * 0.25),
+        "other": int(total_target * 0.48),
+    }
+
+    print(f"Target counts per class: {target_counts}")
+
+    # Fill all classes up to their target counts using filler images
     final_images = []
     final_labels = []
 
     for cls_name, label_id in class_to_idx.items():
         paths = image_paths_by_class.get(cls_name, [])
-        needed = target_per_class - len(paths)
+        needed = target_counts[cls_name] - len(paths)
 
         final_images.extend(paths)
         final_labels.extend([label_id] * len(paths))
@@ -235,7 +245,6 @@ def prepare_balanced_fewshot_dataset(uncertain_root, filler_root, transform, out
                 for f in os.listdir(filler_dir)
                 if f.lower().endswith(supported_extensions)
             ]
-            print(f"Found {len(filler_candidates)} filler images for class '{cls_name}'.")
 
             random.shuffle(filler_candidates)
             final_images.extend(filler_candidates[:needed])
@@ -312,7 +321,7 @@ def retrain_fewshot_model(uncertain_root, filler_root, model_weights_path, outpu
     model.train()
     criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
     optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=1e-5)
-    epochs = 5
+    epochs = 3
 
     for epoch in range(epochs):
         running_loss = 0.0
@@ -346,13 +355,13 @@ def retrain_fewshot_model(uncertain_root, filler_root, model_weights_path, outpu
     
     # optional TODO - remove the deletion od images
     # Remove all files under images/low_confidence/, keep label folders empty
-    for folder in ["other", "track", "paper", "plastic"]:
-        folder_path = os.path.join(UNCERTAIN_DIR, folder)
-        if os.path.exists(folder_path):
-            for file in os.listdir(folder_path):
-                file_path = os.path.join(folder_path, file)
-                if os.path.isfile(file_path):
-                    os.remove(file_path)
+    # for folder in ["other", "track", "paper", "plastic"]:
+    #     folder_path = os.path.join(UNCERTAIN_DIR, folder)
+    #     if os.path.exists(folder_path):
+    #         for file in os.listdir(folder_path):
+    #             file_path = os.path.join(folder_path, file)
+    #             if os.path.isfile(file_path):
+    #                 os.remove(file_path)
 
 def reset_model():
     """
