@@ -153,16 +153,16 @@ def default_model_route():
 @dashboard_bp.route("/retrain", methods=["POST"])
 def retrain_endpoint():
     try:
-        retrain_fewshot_model(
+        retrained_weights_path = retrain_fewshot_model(
             uncertain_root="./images/low_confidence",
             filler_root="./original_dataset/train/",
             model_weights_path="./resnet50_recycling_adjusted.pth",
-            # TODO - add counter instead of overriding weights
-            output_weights_path="./resnet50_recycling_retrained.pth"
+            output_weights_folder="./"
         )
         return jsonify({
             "status": "Success", 
-            "message": "Retraining complete"
+            "message": "Retraining complete",
+            "output_weights_path": retrained_weights_path
         }), 200
     except ValueError as ve:
         # Specific error: No images in uncertain dir
