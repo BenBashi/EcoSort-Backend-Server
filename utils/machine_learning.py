@@ -237,8 +237,7 @@ def prepare_balanced_fewshot_dataset(uncertain_root, filler_root, transform, out
         if needed > 0:
             filler_dir = os.path.join(filler_root, cls_name)
             if not os.path.isdir(filler_dir):
-                print(f"Warning: Missing filler directory for class '{cls_name}' in filler_root.")
-                continue
+                os.mkdir(filler_dir)
 
             filler_candidates = [
                 os.path.join(filler_dir, f)
@@ -285,12 +284,37 @@ def prepare_balanced_fewshot_dataset(uncertain_root, filler_root, transform, out
 # -----------------------------------------------------------------------------
 # Retrain on few-shot balanced dataset
 # -----------------------------------------------------------------------------
-def retrain_fewshot_model(uncertain_root, filler_root, model_weights_path, output_weights_path):
+def retrain_fewshot_model(uncertain_root, filler_root, model_weights_path, output_weights_folder="./"):
     """
     Retrains your model on a few-shot balanced dataset using strong augmentations.
-    Saves the updated model weights to output_weights_path.
+    Saves the updated model weights to a dynamically determined path.
     """
     global model_path
+
+    # Dynamically determine the output_weights_path
+    base_name = "resnet50_recycling_retrained"
+    existing_files = [
+        f for f in os.listdir(output_weights_folder)
+        if f.startswith(base_name) and f.endswith(".pth")
+    ]
+
+    if not existing_files:
+        output_weights_path = os.path.join(output_weights_folder, f"{base_name}-1.pth")
+    else:
+        # Extract version numbers from filenames
+        version_numbers = [
+            int(f.split("-")[-1].split(".")[0])
+            for f in existing_files
+            if "-" in f and f.split("-")[-1].split(".")[0].isdigit()
+        ]
+        if version_numbers:  # Ensure version_numbers is not empty
+            max_version = max(version_numbers)
+            output_weights_path = os.path.join(output_weights_folder, f"{base_name}-{max_version + 1}.pth")
+        else:
+            output_weights_path = os.path.join(output_weights_folder, f"{base_name}-1.pth")
+
+    print(f"Output weights path determined: {output_weights_path}")
+
     # Load model
     model = create_model()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -352,16 +376,8 @@ def retrain_fewshot_model(uncertain_root, filler_root, model_weights_path, outpu
     print(f"✅ Retrained model saved at: {output_weights_path}")
     model_path = output_weights_path
     print(f"Model path updated to: {model_path}")
-    
-    # optional TODO - remove the deletion od images
-    # Remove all files under images/low_confidence/, keep label folders empty
-    # for folder in ["other", "track", "paper", "plastic"]:
-    #     folder_path = os.path.join(UNCERTAIN_DIR, folder)
-    #     if os.path.exists(folder_path):
-    #         for file in os.listdir(folder_path):
-    #             file_path = os.path.join(folder_path, file)
-    #             if os.path.isfile(file_path):
-    #                 os.remove(file_path)
+
+    return output_weights_path
 
 def reset_model():
     """
