@@ -178,3 +178,5 @@ cython_debug/
 images/
 original_dataset/
 balanced_dataset_labels.csv
+
+resnet50_recycling*
