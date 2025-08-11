@@ -1,4 +1,8 @@
 from flask import Blueprint, request, jsonify
+from utils.machine_learning import (
+    retrain_fewshot_model,
+    reset_model
+)
 from data.mongo_db import (
     update_sample,
     get_samples,
@@ -131,21 +135,47 @@ def copy_uncertain_image_route(sample_id):
     except Exception as ex:
         return jsonify({"error": f"Error: {ex}"}), 500
 
+
 @dashboard_bp.route("/default_model", methods=["POST"])
 def default_model_route():
     """
     Resets the active classifier to the default pre-trained model.
     (Placeholder)
     """
-    return jsonify({"message": "Default model reactivated"}), 200
+    try:
+        reset_model()
+        return jsonify({"message": "Default model reactivated"}), 200
+    except Exception as ex:
+        return jsonify({"Error reseting the model": f"Error: {ex}"}), 500
+
+    
 
 @dashboard_bp.route("/retrain", methods=["POST"])
-def retrain_route():
-    """
-    Retrains the model with updated/mislabeled data.
-    (Placeholder)
-    """
-    return jsonify({"message": "Retraining started..."}), 200
+def retrain_endpoint():
+    try:
+        retrained_weights_path = retrain_fewshot_model(
+            uncertain_root="./images/low_confidence",
+            filler_root="./original_dataset/train/",
+            model_weights_path="./resnet50_recycling_adjusted.pth",
+            output_weights_folder="./"
+        )
+        return jsonify({
+            "status": "Success", 
+            "message": "Retraining complete",
+            "output_weights_path": retrained_weights_path
+        }), 200
+    except ValueError as ve:
+        # Specific error: No images in uncertain dir
+        return jsonify({
+            "status": "Error",
+            "message": str(ve)
+        }), 400
+    except Exception as ex:
+        # Unexpected internal error
+        return jsonify({
+            "status": "Error",
+            "message": "Internal server error"
+        }), 500
 
 @dashboard_bp.route("/delete_result", methods=["POST"])
 def delete_result_route():

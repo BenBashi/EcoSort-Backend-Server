@@ -29,7 +29,7 @@ def _init_serial(state):
 # ──────────────────────────────────────────────────────────────────────────────
 
 # ─────────────────────────────
-# 1.  Stepper‑motor routes
+# Stepper‑motor routes
 # ─────────────────────────────
 @home_bp.route("/system_start", methods=["POST"])
 def system_start_route():
@@ -60,7 +60,7 @@ SERVO_ACTIONS = {
 }
 
 # ─────────────────────────────
-# 2.  Servo routes
+# Servo routes
 # ─────────────────────────────
 
 @home_bp.route("/servo_push", methods=["POST"])
@@ -92,7 +92,7 @@ def servo_push_route():
         return jsonify({"error": f"Servo push failed: {ex}"}), 500
 
 # ─────────────────────────────
-# 3.  Image‑capture / prediction route
+# Image‑capture / prediction route
 # ─────────────────────────────
 
 @home_bp.route("/evaluate", methods=["POST"])

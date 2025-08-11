@@ -1,30 +1,50 @@
 import os
+import shutil
+import random
 import gdown
+import zipfile
 import torch
+import subprocess
 import torch.nn as nn
+from torchvision import datasets, transforms
 import torchvision.models as models
-import torchvision.transforms as transforms
+from torchvision.transforms import RandAugment, transforms
+from torch.utils.data import DataLoader, Subset
+from tqdm import tqdm
 from PIL import Image
 import numpy as np
-import os
 from dotenv import load_dotenv
+from collections import defaultdict
+import csv
+
 
 # Load Configuration
 load_dotenv(dotenv_path="./.env.local")
 MODEL_URL = os.environ.get("MODEL_URL", "")
+KAGGLE_USERNAME = os.environ.get("KAGGLE_USERNAME")
+KAGGLE_KEY = os.environ.get("KAGGLE_KEY")
+KAGGLE_DATASET_URL = os.environ.get("KAGGLE_DATASET_URL")
+TRACK_IMAGES_URL = os.environ.get("TRACK_IMAGES_URL") 
+UNCERTAIN_DIR = "./images/low_confidence"
+ORIGINAL_DATASET_DIR = "./original_dataset"
+BALANCED_DATASET_DIR = "./balanced_fewshot_dataset"
+RETRAINED_MODEL_PATH = "./resnet50_recycling_retrained.pth"
+CLASSES = ["Plastic", "Paper", "Other", "Track"]
 
 # -----------------------------------------------------------------------------
-# 1. Download the model file ONCE (if it doesn't exist yet)
+# Download the model file ONCE (if it doesn't exist yet)
 # -----------------------------------------------------------------------------
 model_path_default = "./resnet50_recycling_adjusted.pth"
 if not os.path.exists(model_path_default):
     gdown.download(MODEL_URL, model_path_default, quiet=False)
 
+model_path = model_path_default
 
 # -----------------------------------------------------------------------------
-# 2. Model creation & loading
+# Model creation & loading
 # -----------------------------------------------------------------------------
 def create_model():
+    model_path
     """
     Create a ResNet50 model:
       - freeze all layers except layer4
@@ -58,12 +78,11 @@ def load_model_weights(model_path):
 
 
 # -----------------------------------------------------------------------------
-# 3. Transform & Prediction
+# Transform & Prediction
 # -----------------------------------------------------------------------------
 def get_transform():
     """
-    Standard transform: resize to 224x224, convert to tensor, normalize with
-    ImageNet means & std.
+    Resize to 224x224, convert to tensor and normalize.
     """
     return transforms.Compose([
         transforms.Resize((224, 224)),
@@ -71,6 +90,7 @@ def get_transform():
         transforms.Normalize(mean=[0.485, 0.456, 0.406],
                              std=[0.229, 0.224, 0.225])
     ])
+
 
 def predict_recycling_class(pil_img, model, device, transform):
     """
@@ -99,7 +119,7 @@ def predict_recycling_class(pil_img, model, device, transform):
 
 
 # -----------------------------------------------------------------------------
-# 4. Single Image Classification Utility
+# Single Image Classification Utility
 # -----------------------------------------------------------------------------
 def run_test_environment(pil_img):
     """
@@ -107,16 +127,263 @@ def run_test_environment(pil_img):
     - Classifies the given PIL image
     - Returns (label, confidence_str)
     """
-    class_names = ["Plastic", "Paper", "Other", "Track"]
-
-    model, device = load_model_weights(model_path_default)
+    print(f"model path is: {model_path}")
+    model, device = load_model_weights(model_path)
     transform = get_transform()
 
     predicted_idx, confidence, _ = predict_recycling_class(
         pil_img, model, device, transform
     )
 
-    label = class_names[predicted_idx]
+    label = CLASSES[predicted_idx]
     confidence_str = f"{confidence * 100:.2f}"
     
     return label, confidence_str
+
+
+# -----------------------------------------------------------------------------
+# Strong Transform with RandAugment For Retraining
+# -----------------------------------------------------------------------------
+def get_augmented_transform_retrain():
+    return transforms.Compose([
+        transforms.Resize((224, 224)),
+        RandAugment(num_ops=2, magnitude=5),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                             std=[0.229, 0.224, 0.225])
+    ])
+
+
+# -----------------------------------------------------------------------------
+# Load & Balance Few-Shot Data from uncertain images + original_dataset
+# -----------------------------------------------------------------------------
+def prepare_balanced_fewshot_dataset(uncertain_root, filler_root, transform, output_csv_path="./balanced_dataset_labels.csv"):
+    """
+    Ensures the proportions of photos in each class match the specified percentages:
+    - Track: 5%
+    - Plastic: 22%
+    - Paper: 25%
+    - Other: 48%
+    Completes the classes using filler images as needed.
+    """
+    # Setup Kaggle API credentials
+    os.makedirs(os.path.expanduser("~/.kaggle"), exist_ok=True)
+    with open(os.path.expanduser("~/.kaggle/kaggle.json"), "w") as f:
+        f.write(f'{{"username":"{KAGGLE_USERNAME}","key":"{KAGGLE_KEY}"}}')
+    os.chmod(os.path.expanduser("~/.kaggle/kaggle.json"), 0o600)
+
+    # Download and unzip dataset if not present
+    if not os.path.exists("./original_dataset") or not os.listdir("./original_dataset"):
+        print("Downloading from Kaggle...")
+        subprocess.run([
+            "kaggle", "datasets", "download", "-d", KAGGLE_DATASET_URL,
+            "-p", ORIGINAL_DATASET_DIR, "--unzip"
+        ], check=True)
+    
+    # Add Track photos that are not in the Kaggle dataset
+    if not os.path.exists("./original_dataset/train/track") or not os.listdir("./original_dataset/train/track"):
+        print("Adding Track images to original dataset...")
+        gdown.download(TRACK_IMAGES_URL, "./original_dataset/train/track.zip", quiet=False)
+        with zipfile.ZipFile("./original_dataset/train/track.zip", "r") as zip_ref:
+            zip_ref.extractall("./original_dataset/train/")
+        os.remove("./original_dataset/train/track.zip")
+
+    # Prepare uncertain dataset class mapping manually (handle missing folders)
+    class_to_idx = {cls_name: i for i, cls_name in enumerate(["plastic", "paper", "other", "track"])}
+    idx_to_class = {v: k for k, v in class_to_idx.items()}
+
+    image_paths_by_class = defaultdict(list)
+    supported_extensions = ('.jpg', '.jpeg', '.png', '.bmp', '.tif', '.tiff', '.webp')
+
+    for cls_name in class_to_idx:
+        class_dir = os.path.join(uncertain_root, cls_name)
+        if not os.path.isdir(class_dir):
+            os.mkdir(class_dir)
+            continue
+        for fname in os.listdir(class_dir):
+            if fname.lower().endswith(supported_extensions):
+                image_paths_by_class[cls_name].append(os.path.join(class_dir, fname))
+
+    # Abort early if no uncertain images at all
+    total_images = sum(len(paths) for paths in image_paths_by_class.values())
+    if total_images == 0:
+        print("No images found in uncertain images path.")
+        return None, None
+
+    # Determine the target number of images for each class
+    track_count = max(50, len(image_paths_by_class["track"]))  # Ensure track has at least 50 photos
+    total_target = track_count / 0.05  # Calculate total target based on track's proportion
+
+    target_counts = {
+        "track": track_count,
+        "plastic": int(total_target * 0.22),
+        "paper": int(total_target * 0.25),
+        "other": int(total_target * 0.48),
+    }
+
+    print(f"Target counts per class: {target_counts}")
+
+    # Fill all classes up to their target counts using filler images
+    final_images = []
+    final_labels = []
+
+    for cls_name, label_id in class_to_idx.items():
+        paths = image_paths_by_class.get(cls_name, [])
+        needed = target_counts[cls_name] - len(paths)
+
+        final_images.extend(paths)
+        final_labels.extend([label_id] * len(paths))
+
+        if needed > 0:
+            filler_dir = os.path.join(filler_root, cls_name)
+            if not os.path.isdir(filler_dir):
+                os.mkdir(filler_dir)
+
+            filler_candidates = [
+                os.path.join(filler_dir, f)
+                for f in os.listdir(filler_dir)
+                if f.lower().endswith(supported_extensions)
+            ]
+
+            random.shuffle(filler_candidates)
+            final_images.extend(filler_candidates[:needed])
+            final_labels.extend([label_id] * min(needed, len(filler_candidates)))
+
+            if len(filler_candidates) < needed:
+                print(f"Warning: Insufficient filler images for class '{cls_name}'. Needed: {needed}, Found: {len(filler_candidates)}")
+
+    # Create CSV file with image paths and labels
+    with open(output_csv_path, mode="w", newline="") as csv_file:
+        writer = csv.writer(csv_file)
+        writer.writerow(["image_path", "label"])
+        for img_path, label in zip(final_images, final_labels):
+            writer.writerow([img_path, idx_to_class[label]])
+    print(f"✅ CSV file created at: {output_csv_path}")
+
+    # Wrap in a custom dataset to support Subset
+    from torchvision.datasets.folder import default_loader
+    class FewShotImageDataset(torch.utils.data.Dataset):
+        def __init__(self, image_paths, labels, transform):
+            self.image_paths = image_paths
+            self.labels = labels
+            self.transform = transform
+
+        def __len__(self):
+            return len(self.image_paths)
+
+        def __getitem__(self, idx):
+            image = default_loader(self.image_paths[idx])
+            if self.transform:
+                image = self.transform(image)
+            return image, self.labels[idx]
+
+    balanced_dataset = FewShotImageDataset(final_images, final_labels, transform)
+    return balanced_dataset, class_to_idx
+
+
+# -----------------------------------------------------------------------------
+# Retrain on few-shot balanced dataset
+# -----------------------------------------------------------------------------
+def retrain_fewshot_model(uncertain_root, filler_root, model_weights_path, output_weights_folder="./"):
+    """
+    Retrains your model on a few-shot balanced dataset using strong augmentations.
+    Saves the updated model weights to a dynamically determined path.
+    """
+    global model_path
+
+    # Dynamically determine the output_weights_path
+    base_name = "resnet50_recycling_retrained"
+    existing_files = [
+        f for f in os.listdir(output_weights_folder)
+        if f.startswith(base_name) and f.endswith(".pth")
+    ]
+
+    if not existing_files:
+        output_weights_path = os.path.join(output_weights_folder, f"{base_name}-1.pth")
+    else:
+        # Extract version numbers from filenames
+        version_numbers = [
+            int(f.split("-")[-1].split(".")[0])
+            for f in existing_files
+            if "-" in f and f.split("-")[-1].split(".")[0].isdigit()
+        ]
+        if version_numbers:  # Ensure version_numbers is not empty
+            max_version = max(version_numbers)
+            output_weights_path = os.path.join(output_weights_folder, f"{base_name}-{max_version + 1}.pth")
+        else:
+            output_weights_path = os.path.join(output_weights_folder, f"{base_name}-1.pth")
+
+    print(f"Output weights path determined: {output_weights_path}")
+
+    # Load model
+    model = create_model()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.load_state_dict(torch.load(model_weights_path, map_location=device))
+    model.to(device)
+
+    for name, param in model.named_parameters():
+        if "layer4" in name or "fc" in name:
+            param.requires_grad = True
+        else:
+            param.requires_grad = False
+
+    # Prepare dataset
+    transform = get_augmented_transform_retrain()
+    balanced_subset, class_to_idx = prepare_balanced_fewshot_dataset(
+        uncertain_root=uncertain_root,
+        filler_root=filler_root,
+        transform=transform
+    )
+
+    # If no data is available, skip training
+    if balanced_subset is None:
+        raise ValueError("No new uncertain images found. Retraining aborted.")
+
+    loader = DataLoader(balanced_subset, batch_size=8, shuffle=True)
+
+    # Retrain
+    model.train()
+    criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
+    optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=1e-5)
+    epochs = 3
+
+    for epoch in range(epochs):
+        running_loss = 0.0
+        correct = 0
+        total = 0
+
+        for images, labels in tqdm(loader, desc=f"Epoch {epoch+1}/{epochs}"):
+            images, labels = images.to(device), labels.to(device)
+
+            optimizer.zero_grad()
+            outputs = model(images)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+
+            running_loss += loss.item()
+
+            _, predicted = torch.max(outputs.data, 1)
+            correct += (predicted == labels).sum().item()
+            total += labels.size(0)
+
+        epoch_loss = running_loss / len(loader)
+        epoch_accuracy = 100 * correct / total
+        print(f"📊 Epoch {epoch+1} - Loss: {epoch_loss:.4f} | Accuracy: {epoch_accuracy:.2f}%")
+
+    # Save updated model
+    torch.save(model.state_dict(), output_weights_path)
+    print(f"✅ Retrained model saved at: {output_weights_path}")
+    model_path = output_weights_path
+    print(f"Model path updated to: {model_path}")
+
+    return output_weights_path
+
+def reset_model():
+    """
+    Resets the model to the default pre-trained weights.
+    """
+    global model_path
+    model_path = model_path_default
+    print(f"Resetting model path to default: {model_path}")
+    return model_path
