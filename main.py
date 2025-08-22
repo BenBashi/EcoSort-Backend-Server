@@ -3,6 +3,7 @@ from flask import Flask, send_from_directory
 from flask_cors import CORS
 from api.dashboard_api import dashboard_bp
 from api.home_api import home_bp
+from api.metrics_api import metrics_bp
 
 def create_app():
     app = Flask(__name__)
@@ -11,6 +12,7 @@ def create_app():
     # Register blueprints
     app.register_blueprint(dashboard_bp, url_prefix="/dashboard")
     app.register_blueprint(home_bp, url_prefix="/home")
+    app.register_blueprint(metrics_bp, url_prefix="/metrics")
 
     app.config['PREDICTION_THRESHOLD'] = 70
 
