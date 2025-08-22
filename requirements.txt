@@ -9,3 +9,5 @@ torchvision
 gdown
 pyserial
 kaggle
+chart.js
+react-chartjs-2
