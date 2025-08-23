@@ -38,9 +38,7 @@ def get_classification_metrics():
             elif pred_cls == "other":
                 classification[true_cls]["wrong_as_other"] += 1
 
-    total_samples = sum(
-        sum(classification[cls].values()) for cls in classification
-    )
+    total_samples = len(docs)
     accuracy = calculate_accuracy()
     retrain_count = 0  # Update if you track retrains
 
