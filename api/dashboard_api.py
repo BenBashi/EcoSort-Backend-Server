@@ -1,7 +1,8 @@
 from flask import Blueprint, request, jsonify
 from utils.machine_learning import (
     retrain_fewshot_model,
-    reset_model
+    switch_model,
+    list_models
 )
 from data.mongo_db import (
     update_sample,
@@ -135,20 +136,21 @@ def copy_uncertain_image_route(sample_id):
     except Exception as ex:
         return jsonify({"error": f"Error: {ex}"}), 500
 
+@dashboard_bp.route("/models", methods=["GET"])
+def get_models():
+    """Return available models."""
+    return jsonify({"models": list_models()}), 200
 
-@dashboard_bp.route("/default_model", methods=["POST"])
-def default_model_route():
-    """
-    Resets the active classifier to the default pre-trained model.
-    (Placeholder)
-    """
+@dashboard_bp.route("/switch_model", methods=["POST"])
+def switch_model_route():
+    """Switch to a chosen model."""
     try:
-        reset_model()
-        return jsonify({"message": "Default model reactivated"}), 200
+        data = request.get_json()
+        model_name = data.get("model_name")
+        switch_model(model_name)
+        return jsonify({"message": f"Switched to {model_name}"}), 200
     except Exception as ex:
-        return jsonify({"Error reseting the model": f"Error: {ex}"}), 500
-
-    
+        return jsonify({"error": str(ex)}), 400
 
 @dashboard_bp.route("/retrain", methods=["POST"])
 def retrain_endpoint():
