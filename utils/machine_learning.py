@@ -31,14 +31,15 @@ BALANCED_DATASET_DIR = "./balanced_fewshot_dataset"
 RETRAINED_MODEL_PATH = "./resnet50_recycling_retrained.pth"
 CLASSES = ["Plastic", "Paper", "Other", "Track"]
 
+WEIGHTS_DIR = "./"
+model_path_default = os.path.join(WEIGHTS_DIR, "resnet50_recycling_adjusted.pth")
+model_path = model_path_default  # global active model
+
 # -----------------------------------------------------------------------------
 # Download the model file ONCE (if it doesn't exist yet)
 # -----------------------------------------------------------------------------
-model_path_default = "./resnet50_recycling_adjusted.pth"
 if not os.path.exists(model_path_default):
     gdown.download(MODEL_URL, model_path_default, quiet=False)
-
-model_path = model_path_default
 
 # -----------------------------------------------------------------------------
 # Model creation & loading
@@ -76,6 +77,32 @@ def load_model_weights(model_path):
     model.eval()
     return model, device
 
+
+# -----------------------------------------------------------------------------
+# Model switching
+# -----------------------------------------------------------------------------
+
+def list_models():
+    """
+    Return list of available weight files.
+    """
+    models = []
+    for fname in os.listdir(WEIGHTS_DIR):
+        if fname.startswith("resnet50_recycling") and fname.endswith(".pth"):
+            models.append(fname)
+    return sorted(models)
+
+def switch_model(model_name: str):
+    """
+    Switch the active model to a chosen one.
+    """
+    global model_path
+    available = list_models()
+    if model_name not in available:
+        raise ValueError(f"Model {model_name} not found.")
+    model_path = os.path.join(WEIGHTS_DIR, model_name)
+    print(f"Switched to model: {model_path}")
+    return model_path
 
 # -----------------------------------------------------------------------------
 # Transform & Prediction
@@ -258,7 +285,7 @@ def prepare_balanced_fewshot_dataset(uncertain_root, filler_root, transform, out
         writer.writerow(["image_path", "label"])
         for img_path, label in zip(final_images, final_labels):
             writer.writerow([img_path, idx_to_class[label]])
-    print(f"✅ CSV file created at: {output_csv_path}")
+    print(f"CSV file created at: {output_csv_path}")
 
     # Wrap in a custom dataset to support Subset
     from torchvision.datasets.folder import default_loader
@@ -373,17 +400,11 @@ def retrain_fewshot_model(uncertain_root, filler_root, model_weights_path, outpu
 
     # Save updated model
     torch.save(model.state_dict(), output_weights_path)
-    print(f"✅ Retrained model saved at: {output_weights_path}")
-    model_path = output_weights_path
-    print(f"Model path updated to: {model_path}")
+    print(f"Retrained model saved at: {output_weights_path}")
 
-    return output_weights_path
-
-def reset_model():
-    """
-    Resets the model to the default pre-trained weights.
-    """
-    global model_path
-    model_path = model_path_default
-    print(f"Resetting model path to default: {model_path}")
-    return model_path
+    # Return new model name to frontend
+    return {
+        "status": "success",
+        "message": "Model retrained successfully",
+        "new_model": os.path.basename(output_weights_path)  # just the filename for dropdown
+    }
