@@ -16,20 +16,20 @@ def get_classification_metrics():
 
     class_names = ["paper", "plastic", "other"]
     classification = {
-        "paper": {"correct": 0, "wrong_as_plastic": 0, "wrong_as_other": 0},
-        "plastic": {"correct": 0, "wrong_as_paper": 0, "wrong_as_other": 0},
-        "other": {"correct": 0, "wrong_as_paper": 0, "wrong_as_plastic": 0}
+        "paper": {"correct": 0, "wrong_as_plastic": 0, "wrong_as_other": 0, "confident": 0},
+        "plastic": {"correct": 0, "wrong_as_paper": 0, "wrong_as_other": 0, "confident": 0},
+        "other": {"correct": 0, "wrong_as_paper": 0, "wrong_as_plastic": 0, "confident": 0}
     }
-    correct = 0
 
     for doc in docs:
         true_cls = (doc.get("image_class") or "").lower()
         pred_cls = (doc.get("system_analysis") or "").lower()
-        if true_cls not in class_names or pred_cls not in class_names:
+        if pred_cls not in class_names:
             continue
-        if true_cls == pred_cls:
+        if true_cls not in class_names:
+            classification[pred_cls]["confident"] += 1
+        elif true_cls == pred_cls:
             classification[true_cls]["correct"] += 1
-            correct += 1
         else:
             if pred_cls == "paper":
                 classification[true_cls]["wrong_as_paper"] += 1
