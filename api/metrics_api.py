@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify
 from data.mongo_db import get_samples
-from api.dashboard_api import calculate_accuracy
+from api.dashboard_api import calculate_accuracy, list_models
 
 metrics_bp = Blueprint("metrics_bp", __name__)
 
@@ -39,8 +39,11 @@ def get_classification_metrics():
                 classification[true_cls]["wrong_as_other"] += 1
 
     total_samples = len(docs)
-    accuracy = calculate_accuracy()
-    retrain_count = 0  # Update if you track retrains
+    accuracy = round(calculate_accuracy(), 2)
+
+    models = list_models()
+    retrain_files = [m for m in models if "retrained" in m]
+    retrain_count = len(retrain_files)
 
     return jsonify({
         "total_samples": total_samples,
