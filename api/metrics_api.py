@@ -39,7 +39,7 @@ def get_classification_metrics():
                 classification[true_cls]["wrong_as_other"] += 1
 
     total_samples = len(docs)
-    accuracy = calculate_accuracy()
+    accuracy = round(calculate_accuracy(), 2)
 
     models = list_models()
     retrain_files = [m for m in models if "retrained" in m]
