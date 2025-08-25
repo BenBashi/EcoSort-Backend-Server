@@ -49,5 +49,6 @@ def get_classification_metrics():
         "total_samples": total_samples,
         "accuracy": accuracy,
         "retrain_count": retrain_count,
-        "classification": classification
+        "classification": classification,
+        "samples": docs
     }), 200
