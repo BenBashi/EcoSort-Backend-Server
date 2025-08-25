@@ -85,7 +85,7 @@ def servo_push_route():
         return jsonify({"error": f"Unknown label: {label}"}), 400
 
     try:
-        time.sleep(1.7)  # wait until the product reaces the end of the belt
+        time.sleep(1.3)  # wait until the product reaces the end of the belt
         action()  # push_right() or push_left()
         return jsonify({"message": f"Servo pushed for {label}"}), 200
     except Exception as ex:
@@ -121,7 +121,7 @@ def evaluate_route():
 
     if float(confidence_str) > threshold and label in SERVO_ACTIONS:
         try:
-            time.sleep(1.7)  # wait until the product reaces the end of the belt
+            time.sleep(1.3)  # wait until the product reaces the end of the belt
             SERVO_ACTIONS[label]()  # Actuate servo
         except Exception as e:
             return jsonify({"error": f"Hardware action failed: {e}"}), 500
