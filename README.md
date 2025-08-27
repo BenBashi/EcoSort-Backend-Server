@@ -40,6 +40,7 @@ Before setting up the server, ensure you have the following installed:
     cd EcoSort-Backend-Server
     ⁠
 
+
 2.⁠ ⁠*Set Up a Virtual Environment*:
    ⁠```bash
     python3 -m venv venv
