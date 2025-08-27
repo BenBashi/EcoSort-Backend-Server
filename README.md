@@ -58,10 +58,10 @@ Before setting up the server, ensure you have the following installed:
    TRACK_IMAGES_URL=<URL for additional Track images>
     ⁠
 
-5.⁠ ⁠**Download the Default Model:**
+5. **Download the Default Model:**
    The server will automatically download the default model if it doesn't exist.
 
-6.⁠ ⁠**Set Up MongoDB:**
+6. ⁠**Set Up MongoDB:**
    Ensure MongoDB is running locally or configure the connection string in the database utility.
 
 ---
