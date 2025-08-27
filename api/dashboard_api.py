@@ -79,28 +79,27 @@ def get_result_route(sample_id):
     except Exception as ex:
         return jsonify({"error": f"Database error: {ex}"}), 500
 
-@dashboard_bp.route("/calculate_accuracy", methods=["GET"])
-def calculate_accuracy_route():
+def calculate_accuracy():
     """
     Compares 'system_analysis' vs. 'image_class' to compute % correct.
     """
-    try:
-        docs = get_samples()
-    except Exception as ex:
-        return jsonify({"error": f"Database error: {ex}"}), 500
-
+    docs = get_samples()
     if not docs:
-        return jsonify({"accuracy": 0}), 200
-
+        return 0
     total = len(docs)
     correct = 0
     for doc in docs:
-        # Adjust keys if your DB fields differ in naming
-        if doc.get("image_class") in [ doc.get("system_analysis"), None ]:
+        if doc.get("image_class") in [doc.get("system_analysis"), None]:
             correct += 1
+    return ((correct / total) * 100)
 
-    accuracy = (correct / total) * 100
-    return jsonify({"accuracy": accuracy}), 200
+@dashboard_bp.route("/calculate_accuracy", methods=["GET"])
+def calculate_accuracy_route():
+    try:
+        accuracy = calculate_accuracy()
+        return jsonify({"accuracy": accuracy}), 200
+    except Exception as ex:
+        return jsonify({"error": f"Database error: {ex}"}), 500
 
 @dashboard_bp.route("/copy_uncertain/<sample_id>", methods=["POST"])
 def copy_uncertain_image_route(sample_id):

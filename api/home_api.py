@@ -13,6 +13,7 @@ from utils.arduino import (
 from data.mongo_db import create_sample
 import uuid
 import os, atexit, time
+from datetime import datetime, timezone
 
 home_bp = Blueprint("home_bp", __name__)
 # ──────────────────────────────────────────────────────────────────────────────
@@ -134,7 +135,8 @@ def evaluate_route():
                 "file_path": saved_path,
                 "system_analysis": label,
                 "image_class": None,
-                "confidence_percentage": confidence_str
+                "confidence_percentage": confidence_str,
+                "timestamp": datetime.now(timezone.utc).isoformat()
             })
         except Exception as e:
             return jsonify({"error": f"DB error: {e}"}), 500
