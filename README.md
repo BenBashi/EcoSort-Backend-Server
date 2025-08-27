@@ -46,10 +46,9 @@ Before setting up the server, ensure you have the following installed:
    python3 -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-3.⁠ ⁠*Install Dependencies*:
-    ⁠```
+3.⁠ ⁠**Install Dependencies:**
+    ⁠```bash
     pip install -r requirements.txt
-    ⁠```
 
 4.⁠ ⁠*Set Up Environment Variables*:
    Create a ⁠ .env.local ⁠ file in the root directory and configure the following:
