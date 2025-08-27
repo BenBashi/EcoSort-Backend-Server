@@ -95,44 +95,6 @@ Before setting up the server, ensure you have the following installed:
 
 ---
 
-## Folder Structure
-
-
-EcoSort-Backend-Server/
-
-├── api/                     # API routes for the server
-
-│   ├── home_api.py          # Routes for image classification and hardware control
-
-│   ├── dashboard_api.py     # Routes for model management and data handling
-
-├── data/                    # Database utilities
-
-│   ├── mongo_db.py          # MongoDB interaction logic
-
-├── utils/                   # Utility modules
-
-│   ├── machine_learning.py  # ML model handling and retraining logic
-
-│   ├── camera.py            # Camera interaction utilities
-
-│   ├── arduino.py           # Arduino hardware control
-
-├── images/                  # Directory for storing captured images
-
-│   ├── low_confidence/      # Images with low classification confidence
-
-├── original_dataset/        # Directory for the original dataset
-
-├── requirements.txt         # Python dependencies
-
-├── .env.local               # Environment variables (not included in the repo)
-
-├── README.md                # Project documentation
-
-
----
-
 ## Model Management
 
 •⁠  ⁠*Model Versioning*:
