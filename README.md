@@ -38,8 +38,6 @@ Before setting up the server, ensure you have the following installed:
    ```bash
    git clone https://github.com/your-repo/EcoSort-Backend-Server.git
    cd EcoSort-Backend-Server
-    ⁠
-
 
 2. **Set Up a Virtual Environment**  
    ```bash
@@ -50,7 +48,7 @@ Before setting up the server, ensure you have the following installed:
    ⁠```bash
    pip install -r requirements.txt
 
-4.⁠ ⁠*Set Up Environment Variables*:
+4.⁠ ⁠**Set Up Environment Variables:**
    Create a ⁠ .env.local ⁠ file in the root directory and configure the following:
    
 ⁠    MODEL_URL=<URL to download the default model>
@@ -60,10 +58,10 @@ Before setting up the server, ensure you have the following installed:
    TRACK_IMAGES_URL=<URL for additional Track images>
     ⁠
 
-5.⁠ ⁠*Download the Default Model*:
+5.⁠ ⁠**Download the Default Model:**
    The server will automatically download the default model if it doesn't exist.
 
-6.⁠ ⁠*Set Up MongoDB*:
+6.⁠ ⁠**Set Up MongoDB:**
    Ensure MongoDB is running locally or configure the connection string in the database utility.
 
 ---
