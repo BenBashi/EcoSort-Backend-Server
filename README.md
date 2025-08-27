@@ -7,9 +7,13 @@ The *EcoSort Backend Server* is the backend component of the EcoSort system, des
 ## Features
 
 •⁠  ⁠*Image Classification*: Classifies waste images into categories like Plastic, Paper, Other, and Track.
+
 •⁠  ⁠*Model Management*: Supports model switching, retraining, and versioning.
+
 •⁠  ⁠*Database Integration*: Stores classification results and user feedback in MongoDB.
+
 •⁠  ⁠*Hardware Control*: Interfaces with motors and servos for waste sorting.
+
 •⁠  ⁠*RESTful APIs*: Provides endpoints for system operations, data management, and model handling.
 
 ---
@@ -19,8 +23,11 @@ The *EcoSort Backend Server* is the backend component of the EcoSort system, des
 Before setting up the server, ensure you have the following installed:
 
 •⁠  ⁠Python 3.8+
+
 •⁠  ⁠MongoDB
+
 •⁠  ⁠Kaggle CLI (for dataset downloads)
+
 •⁠  ⁠CUDA (optional, for GPU acceleration)
 
 ---
@@ -92,20 +99,35 @@ Before setting up the server, ensure you have the following installed:
 
 
 EcoSort-Backend-Server/
+
 ├── api/                     # API routes for the server
+
 │   ├── home_api.py          # Routes for image classification and hardware control
+
 │   ├── dashboard_api.py     # Routes for model management and data handling
+
 ├── data/                    # Database utilities
+
 │   ├── mongo_db.py          # MongoDB interaction logic
+
 ├── utils/                   # Utility modules
+
 │   ├── machine_learning.py  # ML model handling and retraining logic
+
 │   ├── camera.py            # Camera interaction utilities
+
 │   ├── arduino.py           # Arduino hardware control
+
 ├── images/                  # Directory for storing captured images
+
 │   ├── low_confidence/      # Images with low classification confidence
+
 ├── original_dataset/        # Directory for the original dataset
+
 ├── requirements.txt         # Python dependencies
+
 ├── .env.local               # Environment variables (not included in the repo)
+
 ├── README.md                # Project documentation
 
 
@@ -115,6 +137,7 @@ EcoSort-Backend-Server/
 
 •⁠  ⁠*Model Versioning*:
   Retrained models are saved with versioned filenames (e.g., ⁠ resnet50_recycling_retrained-1.pth ⁠, ⁠ resnet50_recycling_retrained-2.pth ⁠).
+
 •⁠  ⁠*Switching Models*:
   Use the ⁠ /switch_model ⁠ endpoint to switch between available models.
 
@@ -123,5 +146,7 @@ EcoSort-Backend-Server/
 ## Retraining the Model
 
 1.⁠ ⁠Add new images to the ⁠ images/low_confidence/ ⁠ directory.
+
 2.⁠ ⁠Use the ⁠ /retrain ⁠ endpoint to retrain the model.
+
 3.⁠ ⁠The retrained model will be saved with a new version number.
