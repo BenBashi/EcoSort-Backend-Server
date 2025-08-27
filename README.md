@@ -34,10 +34,10 @@ Before setting up the server, ensure you have the following installed:
 
 ## Installation
 
-1.⁠ ⁠**Clone the Repository:**
-    ```bash
-    git clone https://github.com/your-repo/EcoSort-Backend-Server.git
-    cd EcoSort-Backend-Server
+1. **Clone the Repository:**
+   ```bash
+   git clone https://github.com/your-repo/EcoSort-Backend-Server.git
+   cd EcoSort-Backend-Server
     ⁠
 
 
@@ -47,8 +47,8 @@ Before setting up the server, ensure you have the following installed:
    source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 3.⁠ ⁠**Install Dependencies:**
-    ⁠```bash
-    pip install -r requirements.txt
+   ⁠```bash
+   pip install -r requirements.txt
 
 4.⁠ ⁠*Set Up Environment Variables*:
    Create a ⁠ .env.local ⁠ file in the root directory and configure the following:
