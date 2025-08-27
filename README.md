@@ -37,7 +37,8 @@ Before setting up the server, ensure you have the following installed:
 1.⁠ ⁠*Clone the Repository*:
     ```
     git clone https://github.com/your-repo/EcoSort-Backend-Server.git
-    
+    ```
+    ```
     cd EcoSort-Backend-Server
     ⁠```
 
@@ -45,6 +46,8 @@ Before setting up the server, ensure you have the following installed:
 2.⁠ ⁠*Set Up a Virtual Environment*:
     ```
     python3 -m venv venv
+    ```
+    ```
     source venv/bin/activate  # On Windows: venv\Scripts\activate
     ⁠```
 
