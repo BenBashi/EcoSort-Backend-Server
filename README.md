@@ -51,10 +51,14 @@ Before setting up the server, ensure you have the following installed:
 4. ⁠**Set Up Environment Variables:**
    Create a ⁠ .env.local ⁠ file in the root directory and configure the following:
    
-⁠    MODEL_URL=<URL to download the default model>
+⁠   MODEL_URL=<URL to download the default model>
+
    KAGGLE_USERNAME=<Your Kaggle username>
+
    KAGGLE_KEY=<Your Kaggle API key>
+
    KAGGLE_DATASET_URL=<Kaggle dataset URL>
+   
    TRACK_IMAGES_URL=<URL for additional Track images>
     ⁠
 
