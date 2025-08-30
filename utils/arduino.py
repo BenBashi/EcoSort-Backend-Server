@@ -9,7 +9,7 @@ BAUD_RATE   = 115200     # Must match your Arduino sketch
 
 # We'll keep a global reference to the Serial object
 arduino_serial = None
-SLEEP_BETWEEN_PUSHES = 1.7
+SLEEP_BETWEEN_PUSHES = 1.8
 
 # =======================================
 # Connection Functions
