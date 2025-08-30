@@ -9,7 +9,7 @@ BAUD_RATE   = 115200     # Must match your Arduino sketch
 
 # We'll keep a global reference to the Serial object
 arduino_serial = None
-
+SLEEP_BETWEEN_PUSHES = 1.7
 
 # =======================================
 # Connection Functions
@@ -65,7 +65,7 @@ def push_right():
     Paper waste.
     """
     send_command("LEFT")
-    time.sleep(1.2)
+    time.sleep(SLEEP_BETWEEN_PUSHES)
     send_command("RIGHT")
 
 def push_left():
@@ -75,7 +75,7 @@ def push_left():
     Plastic waste.
     """
     send_command("RIGHT")
-    time.sleep(1.2)
+    time.sleep(SLEEP_BETWEEN_PUSHES)
     send_command("LEFT")
 
 
