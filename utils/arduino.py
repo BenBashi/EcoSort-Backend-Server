@@ -65,7 +65,7 @@ def push_right():
     Paper waste.
     """
     send_command("LEFT")
-    time.sleep(0.9)
+    time.sleep(1.2)
     send_command("RIGHT")
 
 def push_left():
@@ -75,7 +75,7 @@ def push_left():
     Plastic waste.
     """
     send_command("RIGHT")
-    time.sleep(0.9)
+    time.sleep(1.2)
     send_command("LEFT")
 
 

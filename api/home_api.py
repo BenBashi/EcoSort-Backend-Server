@@ -86,7 +86,7 @@ def servo_push_route():
         return jsonify({"error": f"Unknown label: {label}"}), 400
 
     try:
-        time.sleep(1.3)  # wait until the product reaces the end of the belt
+        time.sleep(1)  # wait until the product reaces the end of the belt
         action()  # push_right() or push_left()
         return jsonify({"message": f"Servo pushed for {label}"}), 200
     except Exception as ex:
